@@ -4,6 +4,10 @@ import LoginPage from './pages/auth/LoginPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProductsPage from './pages/products/ProductsPage'
 import Layout from './components/layout/Layout'
+import NewSalePage from "./pages/sales/NewSalePage.tsx";
+import SalesPage from "./pages/sales/SalesPage.tsx";
+import CustomersPage from "./pages/customers/CustomersPage.tsx";
+import UsersPage from "./pages/users/UsersPage.tsx";
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -48,11 +52,11 @@ export default function App() {
                     <Route path="products"  element={<ProductsPage />} />
 
                     {/* Added per step */}
-                    {/* <Route path="sales"     element={<SalesPage />} /> */}
-                    {/* <Route path="sales/new" element={<NewSalePage />} /> */}
-                    {/* <Route path="customers" element={<CustomersPage />} /> */}
+                    <Route path="sales"     element={<SalesPage />} />
+                      <Route path="sales/new" element={<NewSalePage />} />
+                      <Route path="customers" element={<CustomersPage />} />
                     {/* <Route path="reports"   element={<ReportsPage />} /> */}
-                    {/* <Route path="users"     element={<UsersPage />} /> */}
+                     <Route path="users"     element={<UsersPage />} />
                 </Route>
 
                 {/* Catch all */}

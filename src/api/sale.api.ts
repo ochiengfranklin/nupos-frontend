@@ -2,8 +2,8 @@ import api from './axios'
 import type {ApiResponse, Sale} from '../types';
 
 interface CreateSalePayload {
-    items: { productId: string; quantity: number }[]
-    paymentMethod: 'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'
+    items:             { productId: string; quantity: number }[]
+    paymentMethod:     'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'
     customerId?:       string
     discountAmount?:   number
     notes?:            string

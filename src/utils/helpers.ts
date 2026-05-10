@@ -1,6 +1,7 @@
 // Format number as KES currency
 export const formatCurrency = (amount: number | string): string => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount
+    if (isNaN(num)) return 'KES 0.00'
     return new Intl.NumberFormat('en-KE', {
         style:    'currency',
         currency: 'KES',
@@ -34,4 +35,12 @@ export const getErrorMessage = (error: any): string => {
         error?.message ||
         'Something went wrong'
     )
+}
+
+// Time greeting
+export const getGreeting = (): string => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 17) return 'Good afternoon'
+    return 'Good evening'
 }

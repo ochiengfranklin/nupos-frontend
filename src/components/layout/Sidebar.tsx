@@ -4,7 +4,7 @@ import { authApi } from '../../api/auth.api'
 
 const navItems = [
     {
-        path: '/dashboard',
+        path: '/app/dashboard',
         label: 'Dashboard',
         roles: ['OWNER', 'MANAGER', 'CASHIER', 'STOREKEEPER'],
         icon: (
@@ -15,7 +15,7 @@ const navItems = [
         ),
     },
     {
-        path: '/sales/new',
+        path: '/app/sales/new',
         label: 'New Sale',
         roles: ['OWNER', 'MANAGER', 'CASHIER'],
         icon: (
@@ -26,7 +26,7 @@ const navItems = [
         ),
     },
     {
-        path: '/sales',
+        path: '/app/sales',
         label: 'Sales',
         roles: ['OWNER', 'MANAGER', 'CASHIER'],
         icon: (
@@ -38,7 +38,7 @@ const navItems = [
         ),
     },
     {
-        path: '/products',
+        path: '/app/products',
         label: 'Products',
         roles: ['OWNER', 'MANAGER', 'STOREKEEPER'],
         icon: (
@@ -50,7 +50,7 @@ const navItems = [
         ),
     },
     {
-        path: '/customers',
+        path: '/app/customers',
         label: 'Customers',
         roles: ['OWNER', 'MANAGER', 'CASHIER'],
         icon: (
@@ -62,7 +62,7 @@ const navItems = [
         ),
     },
     {
-        path: '/reports',
+        path: '/app/reports',
         label: 'Reports',
         roles: ['OWNER', 'MANAGER'],
         icon: (
@@ -74,7 +74,7 @@ const navItems = [
         ),
     },
     {
-        path: '/users',
+        path: '/app/users',
         label: 'Users',
         roles: ['OWNER', 'MANAGER'],
         icon: (
@@ -97,7 +97,7 @@ export default function Sidebar() {
     const handleLogout = async () => {
         try { await authApi.logout() } finally {
             logout()
-            navigate('/login')
+            navigate('/')
         }
     }
 

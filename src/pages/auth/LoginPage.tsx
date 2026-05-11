@@ -25,7 +25,7 @@ export default function LoginPage() {
             const response = await authApi.login(form)
             const { accessToken, refreshToken, user, shop } = response.data.data!
             setAuth({ accessToken, refreshToken, user, shop })
-            navigate('/dashboard')
+            navigate('/app/dashboard')
         } catch (err) {
             setError(getErrorMessage(err))
         } finally {

@@ -3,263 +3,365 @@ import { useNavigate } from 'react-router-dom'
 export default function LandingPage() {
     const navigate = useNavigate()
 
+    const scrollTo = (id: string) => {
+        const el = document.getElementById(id)
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+    }
+
     return (
-        <div style={{ fontFamily: "'DM Sans', sans-serif", background: '#fff', color: '#0f172a' }}>
+        <div style={{ fontFamily: "'DM Sans', sans-serif", background: '#fff', color: '#1a1a1a' }}>
             <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+        html { scroll-behavior: smooth; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .nav-link {
-          color: #64748b; font-size: 14px; text-decoration: none;
-          transition: color 0.15s; cursor: pointer;
+        :root {
+          --green:       #008060;
+          --green-dark:  #005c43;
+          --green-light: #e3f1ec;
+          --green-mid:   #c2e0d5;
+          --text:        #1a1a1a;
+          --text-2:      #4a4a4a;
+          --text-3:      #6d7175;
+          --border:      #e1e3e5;
+          --bg:          #f6f6f7;
+          --white:       #ffffff;
         }
-        .nav-link:hover { color: #0f172a; }
 
-        .btn-primary {
-          background: #2563eb; color: #fff; border: none;
-          padding: 12px 24px; border-radius: 8px; font-size: 15px;
-          font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
-          transition: all 0.15s; text-decoration: none; display: inline-block;
+        .btn-green {
+          background: #008060; color: #fff; border: none;
+          padding: 14px 28px; border-radius: 6px; font-size: 15px;
+          font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
+          transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+          letter-spacing: -0.01em;
         }
-        .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+        .btn-green:hover { background: #005c43; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,128,96,0.25); }
+        .btn-green:active { transform: translateY(0); }
 
-        .btn-secondary {
-          background: #fff; color: #0f172a;
-          border: 1.5px solid #e2e8f0;
-          padding: 12px 24px; border-radius: 8px; font-size: 15px;
+        .btn-outline {
+          background: transparent; color: #1a1a1a;
+          border: 1.5px solid #e1e3e5;
+          padding: 13px 28px; border-radius: 6px; font-size: 15px;
           font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
+          transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-outline:hover { border-color: #1a1a1a; }
+
+        .btn-white {
+          background: #fff; color: #008060; border: none;
+          padding: 14px 28px; border-radius: 6px; font-size: 15px;
+          font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
           transition: all 0.15s;
         }
-        .btn-secondary:hover { border-color: #2563eb; color: #2563eb; }
+        .btn-white:hover { background: #f0faf7; }
+
+        .nav-link {
+          color: #4a4a4a; font-size: 14px; text-decoration: none;
+          font-weight: 500; transition: color 0.15s; cursor: pointer;
+          background: none; border: none; font-family: 'DM Sans', sans-serif;
+        }
+        .nav-link:hover { color: #1a1a1a; }
 
         .feature-card {
-          background: #fff; border: 1px solid #e2e8f0;
-          border-radius: 12px; padding: 24px;
-          transition: all 0.2s;
+          background: #fff; border: 1px solid #e1e3e5;
+          border-radius: 12px; padding: 28px; transition: all 0.2s;
         }
         .feature-card:hover {
-          border-color: #bfdbfe;
-          box-shadow: 0 4px 20px rgba(37,99,235,0.08);
+          border-color: #c2e0d5;
+          box-shadow: 0 4px 24px rgba(0,128,96,0.08);
           transform: translateY(-2px);
         }
 
-        .step-number {
-          width: 36px; height: 36px; border-radius: 50%;
-          background: #eff6ff; color: #2563eb;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 14px; font-weight: 700; flex-shrink: 0;
-        }
-
         .pricing-card {
-          background: #fff; border: 1.5px solid #e2e8f0;
-          border-radius: 16px; padding: 32px;
-          transition: all 0.2s;
+          background: #fff; border: 1.5px solid #e1e3e5;
+          border-radius: 12px; padding: 32px; transition: all 0.2s;
         }
         .pricing-card.popular {
-          border-color: #2563eb;
-          box-shadow: 0 8px 30px rgba(37,99,235,0.12);
+          border-color: #008060;
+          box-shadow: 0 8px 32px rgba(0,128,96,0.12);
         }
+
+        .business-tag {
+          background: #f6f6f7; border: 1px solid #e1e3e5;
+          border-radius: 20px; padding: 7px 16px;
+          color: #4a4a4a; font-size: 13px; font-weight: 500;
+          display: inline-flex; align-items: center; gap: 6px;
+          transition: all 0.15s; cursor: default;
+        }
+        .business-tag:hover { border-color: #008060; color: #008060; background: #e3f1ec; }
+
+        .testimonial-card {
+          background: #fff; border: 1px solid #e1e3e5;
+          border-radius: 12px; padding: 28px;
+        }
+
+        .footer-link {
+          color: #6d7175; font-size: 13px; text-decoration: none;
+          transition: color 0.15s; display: block; margin-bottom: 10px;
+        }
+        .footer-link:hover { color: #fff; }
 
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .fade-up { animation: fadeUp 0.6s ease forwards; }
-        .fade-up-1 { animation-delay: 0.1s; opacity: 0; }
-        .fade-up-2 { animation-delay: 0.2s; opacity: 0; }
-        .fade-up-3 { animation-delay: 0.3s; opacity: 0; }
-        .fade-up-4 { animation-delay: 0.4s; opacity: 0; }
+        .fade-up  { animation: fadeUp 0.55s ease forwards; opacity: 0; }
+        .delay-1  { animation-delay: 0.08s; }
+        .delay-2  { animation-delay: 0.16s; }
+        .delay-3  { animation-delay: 0.24s; }
+        .delay-4  { animation-delay: 0.32s; }
 
+        @media (max-width: 900px) {
+          .hero-grid     { grid-template-columns: 1fr !important; }
+          .mockup-wrap   { display: none !important; }
+        }
         @media (max-width: 768px) {
-          .hero-btns { flex-direction: column !important; }
+          .features-grid { grid-template-columns: 1fr 1fr !important; }
+          .pricing-grid  { grid-template-columns: 1fr !important; }
+          .footer-grid   { grid-template-columns: 1fr 1fr !important; }
+          .steps-grid    { grid-template-columns: 1fr !important; }
+          .hero-title    { font-size: 36px !important; }
+          .nav-links     { display: none !important; }
+          .hero-stats    { grid-template-columns: 1fr 1fr !important; }
+          .reviews-grid  { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
           .features-grid { grid-template-columns: 1fr !important; }
-          .steps-grid { grid-template-columns: 1fr !important; }
-          .pricing-grid { grid-template-columns: 1fr !important; }
-          .footer-grid { grid-template-columns: 1fr !important; }
-          .hero-title { font-size: 36px !important; }
-          .nav-links { display: none !important; }
+          .footer-grid   { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
             {/* ── Navbar ── */}
             <nav style={{
                 position: 'sticky', top: 0, zIndex: 100,
-                background: 'rgba(255,255,255,0.95)',
-                backdropFilter: 'blur(8px)',
-                borderBottom: '1px solid #f1f5f9',
-                padding: '0 24px',
+                background: 'rgba(255,255,255,0.96)',
+                backdropFilter: 'blur(10px)',
+                borderBottom: '1px solid #e1e3e5',
             }}>
                 <div style={{
-                    maxWidth: '1100px', margin: '0 auto',
+                    maxWidth: '1200px', margin: '0 auto', padding: '0 32px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    height: '64px',
+                    height: '60px',
                 }}>
                     {/* Logo */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
                         <div style={{
-                            width: '34px', height: '34px', background: '#2563eb',
-                            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: '32px', height: '32px', background: '#008060',
+                            borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
                                 <line x1="3" y1="6" x2="21" y2="6"/>
                                 <path d="M16 10a4 4 0 01-8 0"/>
                             </svg>
                         </div>
-                        <span style={{ fontSize: '17px', fontWeight: 600, color: '#0f172a' }}>NuPOS</span>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.02em' }}>NuPOS</span>
                     </div>
 
                     {/* Nav links */}
-                    <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-                        <a className="nav-link" href="#features">Features</a>
-                        <a className="nav-link" href="#how-it-works">How it works</a>
-                        <a className="nav-link" href="#pricing">Pricing</a>
+                    <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                        <button className="nav-link" onClick={() => scrollTo('features')}>Features</button>
+                        <button className="nav-link" onClick={() => scrollTo('how-it-works')}>How it works</button>
+                        <button className="nav-link" onClick={() => scrollTo('pricing')}>Pricing</button>
+                        <button className="nav-link" onClick={() => navigate('/contact')}>Contact</button>
                     </div>
 
-                    {/* CTA */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <button className="btn-secondary" onClick={() => navigate('/login')} style={{ padding: '8px 16px', fontSize: '14px' }}>
-                            Sign in
+                    {/* Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button className="btn-outline" onClick={() => navigate('/login')} style={{ padding: '9px 18px', fontSize: '14px' }}>
+                            Log in
                         </button>
-                        <button className="btn-primary" onClick={() => navigate('/login')} style={{ padding: '8px 16px', fontSize: '14px' }}>
-                            Get started free
+                        <button className="btn-green" onClick={() => navigate('/login')} style={{ padding: '9px 18px', fontSize: '14px' }}>
+                            Start free trial
                         </button>
                     </div>
                 </div>
             </nav>
 
-            {/* ── Hero ── */}
-            <section style={{
-                background: 'linear-gradient(180deg, #f8fafc 0%, #fff 100%)',
-                padding: '80px 24px 100px',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-            }}>
-                {/* Background decoration */}
-                <div style={{
-                    position: 'absolute', top: '-100px', left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '600px', height: '600px',
-                    background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)',
-                    pointerEvents: 'none',
-                }} />
+            {/*Hero*/}
+            <section style={{ background: '#fff', padding: '72px 32px 80px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }}>
 
-                <div style={{ maxWidth: '760px', margin: '0 auto', position: 'relative' }}>
-                    {/* Badge */}
-                    <div className="fade-up fade-up-1" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                        background: '#eff6ff', border: '1px solid #bfdbfe',
-                        borderRadius: '20px', padding: '6px 14px', marginBottom: '24px',
-                    }}>
-                        <span style={{ width: '6px', height: '6px', background: '#2563eb', borderRadius: '50%', display: 'inline-block' }} />
-                        <span style={{ color: '#2563eb', fontSize: '13px', fontWeight: 500 }}>
-              Built for Kenyan businesses
-            </span>
-                    </div>
-
-                    {/* Headline */}
-                    <h1 className="fade-up fade-up-2 hero-title" style={{
-                        fontSize: '52px', fontWeight: 700, lineHeight: 1.1,
-                        letterSpacing: '-0.03em', marginBottom: '20px',
-                        color: '#0f172a',
-                    }}>
-                        The modern POS system<br />
-                        <span style={{ color: '#2563eb' }}>Kenyan businesses</span> deserve
-                    </h1>
-
-                    {/* Subheadline */}
-                    <p className="fade-up fade-up-3" style={{
-                        fontSize: '18px', color: '#64748b', lineHeight: 1.7,
-                        marginBottom: '36px', maxWidth: '560px', margin: '0 auto 36px',
-                    }}>
-                        Manage sales, inventory and staff from one place.
-                        M-Pesa integrated. Works for retail shops, minimarts,
-                        pharmacies, electronics stores and wholesalers.
-                    </p>
-
-                    {/* CTA buttons */}
-                    <div className="fade-up fade-up-4 hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button className="btn-primary" onClick={() => navigate('/login')} style={{ padding: '14px 32px', fontSize: '16px' }}>
-                            Start for free →
-                        </button>
-                        <button className="btn-secondary" style={{ padding: '14px 32px', fontSize: '16px' }}>
-                            Watch demo
-                        </button>
-                    </div>
-
-                    {/* Social proof */}
-                    <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '20px' }}>
-                        No credit card required · Setup in 5 minutes · Cancel anytime
-                    </p>
-                </div>
-
-                {/* Hero mockup */}
-                <div style={{
-                    maxWidth: '900px', margin: '60px auto 0',
-                    background: '#0f172a', borderRadius: '16px',
-                    padding: '16px', boxShadow: '0 40px 80px rgba(15,23,42,0.2)',
-                    border: '1px solid #1e293b',
-                }}>
-                    {/* Fake browser bar */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #1e293b' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }} />
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }} />
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }} />
-                        <div style={{ flex: 1, background: '#1e293b', borderRadius: '4px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '8px' }}>
-                            <span style={{ color: '#475569', fontSize: '11px' }}>nupos.vercel.app</span>
-                        </div>
-                    </div>
-                    {/* Fake POS UI */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '12px', minHeight: '320px' }}>
-                        {/* Left — products */}
-                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '16px' }}>
-                            <div style={{ background: '#e2e8f0', borderRadius: '6px', height: '32px', marginBottom: '12px' }} />
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                                {['All', 'Beverages', 'Electronics'].map(c => (
-                                    <div key={c} style={{ background: c === 'All' ? '#2563eb' : '#fff', borderRadius: '20px', padding: '4px 12px', border: '1px solid #e2e8f0' }}>
-                                        <span style={{ color: c === 'All' ? '#fff' : '#64748b', fontSize: '11px' }}>{c}</span>
-                                    </div>
-                                ))}
+                        {/* Left */}
+                        <div>
+                            <div className="fade-up delay-1" style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                background: '#e3f1ec', border: '1px solid #c2e0d5',
+                                borderRadius: '4px', padding: '5px 12px', marginBottom: '20px',
+                            }}>
+                                <span style={{ width: '6px', height: '6px', background: '#008060', borderRadius: '50%', display: 'inline-block' }} />
+                                <span style={{ color: '#005c43', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Built for Kenya
+                </span>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                                {['Fanta 500ml\nKES 55', 'Coke 500ml\nKES 60', 'Pepsi 500ml\nKES 50', 'Water 500ml\nKES 30', 'Sprite 500ml\nKES 55', 'Juice 1L\nKES 120'].map((p, i) => (
-                                    <div key={i} style={{ background: i === 0 ? '#eff6ff' : '#fff', border: `1.5px solid ${i === 0 ? '#2563eb' : '#e2e8f0'}`, borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-                                        <div style={{ width: '32px', height: '32px', background: '#f1f5f9', borderRadius: '6px', margin: '0 auto 6px' }} />
-                                        <p style={{ color: '#0f172a', fontSize: '10px', fontWeight: 500, margin: '0 0 2px' }}>{p.split('\n')[0]}</p>
-                                        <p style={{ color: '#2563eb', fontSize: '11px', fontWeight: 600, margin: 0 }}>{p.split('\n')[1]}</p>
+
+                            <h1 className="fade-up delay-2 hero-title" style={{
+                                fontSize: '48px', fontWeight: 700, lineHeight: 1.08,
+                                letterSpacing: '-0.03em', marginBottom: '20px', color: '#1a1a1a',
+                            }}>
+                                The POS system<br />
+                                your shop<br />
+                                <span style={{ color: '#008060' }}>actually needs</span>
+                            </h1>
+
+                            <p className="fade-up delay-3" style={{
+                                fontSize: '17px', color: '#4a4a4a', lineHeight: 1.65,
+                                marginBottom: '32px', maxWidth: '440px',
+                            }}>
+                                Sell in-person with M-Pesa, cash or card. Track inventory in real time.
+                                Manage your team. See your business grow — all from one place.
+                            </p>
+
+                            <div className="fade-up delay-4" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '28px' }}>
+                                <button className="btn-green" onClick={() => navigate('/login')}>
+                                    Start free trial
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                        <polyline points="12,5 19,12 12,19"/>
+                                    </svg>
+                                </button>
+                                <button className="btn-outline" onClick={() => scrollTo('how-it-works')}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polygon points="10,8 16,12 10,16 10,8"/>
+                                    </svg>
+                                    See how it works
+                                </button>
+                            </div>
+
+                            <p style={{ color: '#6d7175', fontSize: '13px' }}>
+                                ✓ No credit card required &nbsp;·&nbsp; ✓ Setup in 5 minutes &nbsp;·&nbsp; ✓ Cancel anytime
+                            </p>
+
+                            {/* Stats */}
+                            <div className="hero-stats" style={{
+                                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: '12px', marginTop: '40px', paddingTop: '32px',
+                                borderTop: '1px solid #e1e3e5',
+                            }}>
+                                {[
+                                    { value: 'M-Pesa', label: 'Fully integrated' },
+                                    { value: '5 min',  label: 'Setup time' },
+                                    { value: '99.9%',  label: 'Uptime SLA' },
+                                ].map(s => (
+                                    <div key={s.label}>
+                                        <p style={{ fontSize: '22px', fontWeight: 700, color: '#008060', margin: '0 0 2px', letterSpacing: '-0.02em' }}>{s.value}</p>
+                                        <p style={{ fontSize: '12px', color: '#6d7175', margin: 0 }}>{s.label}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        {/* Right — cart */}
-                        <div style={{ background: '#fff', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-                            <p style={{ color: '#0f172a', fontSize: '13px', fontWeight: 600, margin: '0 0 12px' }}>Cart <span style={{ background: '#2563eb', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>3</span></p>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {[['Fanta 500ml', 'KES 110', '×2'], ['Coke 500ml', 'KES 60', '×1'], ['Water 500ml', 'KES 30', '×1']].map(([n, p, q]) => (
-                                    <div key={n} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderRadius: '6px', padding: '8px 10px' }}>
-                                        <div>
-                                            <p style={{ color: '#0f172a', fontSize: '11px', fontWeight: 500, margin: 0 }}>{n}</p>
-                                            <p style={{ color: '#94a3b8', fontSize: '10px', margin: 0 }}>{q}</p>
-                                        </div>
-                                        <p style={{ color: '#2563eb', fontSize: '11px', fontWeight: 600, margin: 0 }}>{p}</p>
+
+                        {/* Right — mockup */}
+                        <div className="mockup-wrap fade-up delay-3" style={{ position: 'relative' }}>
+                            <div style={{
+                                position: 'absolute', inset: '-20px',
+                                background: 'radial-gradient(circle at 50% 50%, rgba(0,128,96,0.08) 0%, transparent 70%)',
+                                pointerEvents: 'none',
+                            }} />
+                            <div style={{
+                                background: '#fff', borderRadius: '14px',
+                                border: '1px solid #e1e3e5',
+                                boxShadow: '0 24px 64px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.06)',
+                                overflow: 'hidden', position: 'relative',
+                            }}>
+                                {/* Browser bar */}
+                                <div style={{ background: '#f6f6f7', padding: '10px 16px', borderBottom: '1px solid #e1e3e5', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f57' }} />
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#febc2e' }} />
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#28c840' }} />
                                     </div>
-                                ))}
-                            </div>
-                            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', marginTop: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                    <span style={{ color: '#0f172a', fontSize: '13px', fontWeight: 600 }}>Total</span>
-                                    <span style={{ color: '#0f172a', fontSize: '16px', fontWeight: 700 }}>KES 200</span>
+                                    <div style={{ flex: 1, background: '#fff', borderRadius: '4px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e1e3e5', marginLeft: '8px' }}>
+                                        <span style={{ color: '#6d7175', fontSize: '11px' }}>nupos.app/pos</span>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-                                    {['Cash', 'M-Pesa', 'Card'].map((m, i) => (
-                                        <div key={m} style={{ flex: 1, background: i === 1 ? '#f0fdf4' : '#f8fafc', border: `1.5px solid ${i === 1 ? '#16a34a' : '#e2e8f0'}`, borderRadius: '6px', padding: '6px', textAlign: 'center' }}>
-                                            <span style={{ color: i === 1 ? '#16a34a' : '#64748b', fontSize: '10px', fontWeight: 500 }}>{m}</span>
+
+                                {/* POS mockup */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', minHeight: '360px' }}>
+                                    {/* Products */}
+                                    <div style={{ background: '#f6f6f7', padding: '14px' }}>
+                                        <div style={{ background: '#fff', border: '1px solid #e1e3e5', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6d7175" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                            </svg>
+                                            <span style={{ color: '#6d7175', fontSize: '11px' }}>Search products...</span>
                                         </div>
-                                    ))}
-                                </div>
-                                <div style={{ background: '#2563eb', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-                                    <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>Charge KES 200</span>
+                                        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+                                            {['All', 'Beverages', 'Snacks'].map((c, i) => (
+                                                <div key={c} style={{ background: i === 0 ? '#008060' : '#fff', border: `1px solid ${i === 0 ? '#008060' : '#e1e3e5'}`, borderRadius: '4px', padding: '4px 8px' }}>
+                                                    <span style={{ color: i === 0 ? '#fff' : '#4a4a4a', fontSize: '10px', fontWeight: 500 }}>{c}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                                            {[
+                                                { name: 'Fanta 500ml',  price: 'KES 55',  active: true },
+                                                { name: 'Coke 500ml',   price: 'KES 60',  active: false },
+                                                { name: 'Pepsi 500ml',  price: 'KES 50',  active: false },
+                                                { name: 'Water 500ml',  price: 'KES 30',  active: false },
+                                                { name: 'Sprite 500ml', price: 'KES 55',  active: false },
+                                                { name: 'Juice 1L',     price: 'KES 120', active: false },
+                                            ].map((p, i) => (
+                                                <div key={i} style={{
+                                                    background: p.active ? '#e3f1ec' : '#fff',
+                                                    border: `1.5px solid ${p.active ? '#008060' : '#e1e3e5'}`,
+                                                    borderRadius: '6px', padding: '8px',
+                                                }}>
+                                                    <div style={{ width: '26px', height: '26px', background: p.active ? '#c2e0d5' : '#f6f6f7', borderRadius: '4px', marginBottom: '5px' }} />
+                                                    <p style={{ color: '#1a1a1a', fontSize: '9px', fontWeight: 600, margin: '0 0 2px', lineHeight: 1.2 }}>{p.name}</p>
+                                                    <p style={{ color: '#008060', fontSize: '10px', fontWeight: 700, margin: 0 }}>{p.price}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Cart */}
+                                    <div style={{ background: '#fff', borderLeft: '1px solid #e1e3e5', padding: '14px', display: 'flex', flexDirection: 'column' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                            <span style={{ fontSize: '12px', fontWeight: 700 }}>Cart</span>
+                                            <span style={{ background: '#008060', color: '#fff', fontSize: '9px', fontWeight: 600, padding: '2px 6px', borderRadius: '10px' }}>3</span>
+                                        </div>
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                            {[
+                                                { name: 'Fanta 500ml', total: 'KES 110', qty: '×2' },
+                                                { name: 'Coke 500ml',  total: 'KES 60',  qty: '×1' },
+                                                { name: 'Water 500ml', total: 'KES 30',  qty: '×1' },
+                                            ].map(item => (
+                                                <div key={item.name} style={{ background: '#f6f6f7', borderRadius: '5px', padding: '7px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        <p style={{ color: '#1a1a1a', fontSize: '9px', fontWeight: 600, margin: 0 }}>{item.name}</p>
+                                                        <p style={{ color: '#6d7175', fontSize: '9px', margin: 0 }}>{item.qty}</p>
+                                                    </div>
+                                                    <span style={{ color: '#008060', fontSize: '10px', fontWeight: 700 }}>{item.total}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div style={{ borderTop: '1px solid #e1e3e5', paddingTop: '10px', marginTop: '8px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 700 }}>Total</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 800 }}>KES 200</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '4px', marginBottom: '7px' }}>
+                                                {['Cash', 'M-Pesa', 'Card'].map((m, i) => (
+                                                    <div key={m} style={{
+                                                        flex: 1, textAlign: 'center', padding: '5px 2px', borderRadius: '4px',
+                                                        background: i === 1 ? '#e3f1ec' : '#f6f6f7',
+                                                        border: `1px solid ${i === 1 ? '#008060' : '#e1e3e5'}`,
+                                                    }}>
+                                                        <span style={{ color: i === 1 ? '#008060' : '#4a4a4a', fontSize: '8px', fontWeight: 600 }}>{m}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div style={{ background: '#008060', borderRadius: '5px', padding: '8px', textAlign: 'center' }}>
+                                                <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>Charge KES 200</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -267,93 +369,83 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── Logos / social proof ── */}
-            <section style={{ padding: '32px 24px', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
-                    <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>
-                        Built for every type of Kenyan business
-                    </p>
-                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {['Retail shops', 'Minimarts', 'Pharmacies', 'Electronics', 'Agrovets', 'Wholesalers', 'Boutiques', 'Restaurants'].map(b => (
-                            <span key={b} style={{
-                                background: '#fff', border: '1px solid #e2e8f0',
-                                borderRadius: '20px', padding: '6px 14px',
-                                color: '#64748b', fontSize: '13px',
-                            }}>
-                {b}
-              </span>
+            {/*Business types*/}
+            <section style={{ background: '#f6f6f7', borderTop: '1px solid #e1e3e5', borderBottom: '1px solid #e1e3e5', padding: '24px 32px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <span style={{ color: '#6d7175', fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap' }}>Built for:</span>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {[
+                            { label: 'Retail shops', emoji: '🏪' },
+                            { label: 'Minimarts',    emoji: '🛒' },
+                            { label: 'Pharmacies',   emoji: '💊' },
+                            { label: 'Electronics',  emoji: '📱' },
+                            { label: 'Agrovets',     emoji: '🌱' },
+                            { label: 'Wholesalers',  emoji: '📦' },
+                            { label: 'Boutiques',    emoji: '👗' },
+                            { label: 'Restaurants',  emoji: '🍽️' },
+                        ].map(b => (
+                            <span key={b.label} className="business-tag">{b.emoji} {b.label}</span>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* ── Features ── */}
-            <section id="features" style={{ padding: '80px 24px' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-                        <p style={{ color: '#2563eb', fontSize: '13px', fontWeight: 500, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {/*Features*/}
+            <section id="features" style={{ padding: '88px 32px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ maxWidth: '560px', marginBottom: '56px' }}>
+                        <p style={{ color: '#008060', fontSize: '13px', fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             Features
                         </p>
-                        <h2 style={{ fontSize: '36px', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '12px' }}>
-                            Everything you need to run your shop
+                        <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '14px', color: '#1a1a1a', lineHeight: 1.1 }}>
+                            Everything your shop needs.<br />Nothing it doesn't.
                         </h2>
-                        <p style={{ color: '#64748b', fontSize: '16px', maxWidth: '480px', margin: '0 auto', lineHeight: 1.7 }}>
-                            No complicated setup. No training required. Start selling in minutes.
+                        <p style={{ color: '#4a4a4a', fontSize: '16px', lineHeight: 1.7 }}>
+                            NuPOS is built specifically for Kenyan businesses. No bloat, no unnecessary complexity — just the tools you need.
                         </p>
                     </div>
 
-                    <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                    <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                         {[
                             {
-                                icon: '📱',
-                                title: 'M-Pesa integrated',
-                                desc: 'Accept M-Pesa payments instantly. Till number management, transaction codes, and automatic reconciliation.',
-                                color: '#16a34a',
+                                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,
+                                title: 'M-Pesa payments',
+                                desc:  'Accept M-Pesa instantly. Capture transaction codes and reconcile automatically at end of day.',
                             },
                             {
-                                icon: '📦',
-                                title: 'Real-time inventory',
-                                desc: 'Stock levels update automatically with every sale. Get alerts when products are running low.',
-                                color: '#2563eb',
+                                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+                                title: 'Inventory tracking',
+                                desc:  'Stock levels update automatically with every sale. Get notified before you run out.',
                             },
                             {
-                                icon: '👥',
-                                title: 'Multi-user access',
-                                desc: 'Add cashiers, managers and storekeepers. Each role sees only what they need.',
-                                color: '#9333ea',
+                                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+                                title: 'Team management',
+                                desc:  'Add cashiers, managers and storekeepers. Role-based access ensures each person sees only what they need.',
                             },
                             {
-                                icon: '📊',
+                                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
                                 title: 'Business reports',
-                                desc: 'Daily revenue, top products, cashier performance and payment breakdowns — all in one dashboard.',
-                                color: '#ea580c',
+                                desc:  'Daily revenue, top products, cashier performance and payment breakdowns — all in one place.',
                             },
                             {
-                                icon: '🧾',
+                                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
                                 title: 'Digital receipts',
-                                desc: 'Generate receipts instantly. Share via WhatsApp or print to thermal printers.',
-                                color: '#0891b2',
+                                desc:  'Generate receipts instantly. Print to thermal printers or share via WhatsApp.',
                             },
                             {
-                                icon: '🏪',
-                                title: 'Multi-tenant SaaS',
-                                desc: 'Each business has its own isolated account. Your data is always private and secure.',
-                                color: '#dc2626',
+                                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+                                title: 'Secure & private',
+                                desc:  'Each business has a fully isolated account. Your data is always private and secure.',
                             },
                         ].map(f => (
                             <div key={f.title} className="feature-card">
-                                <div style={{
-                                    width: '44px', height: '44px', borderRadius: '10px',
-                                    background: `${f.color}15`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '20px', marginBottom: '16px',
-                                }}>
+                                <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: '#e3f1ec', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                                     {f.icon}
                                 </div>
-                                <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '8px', color: '#0f172a' }}>
+                                <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '8px', color: '#1a1a1a', letterSpacing: '-0.01em' }}>
                                     {f.title}
                                 </h3>
-                                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.7, margin: 0 }}>
+                                <p style={{ color: '#4a4a4a', fontSize: '14px', lineHeight: 1.65, margin: 0 }}>
                                     {f.desc}
                                 </p>
                             </div>
@@ -362,242 +454,346 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── How it works ── */}
-            <section id="how-it-works" style={{ padding: '80px 24px', background: '#f8fafc' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-                        <p style={{ color: '#2563eb', fontSize: '13px', fontWeight: 500, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {/*How it works*/}
+            <section id="how-it-works" style={{ background: '#f6f6f7', padding: '88px 32px', borderTop: '1px solid #e1e3e5' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+                        <p style={{ color: '#008060', fontSize: '13px', fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             How it works
                         </p>
-                        <h2 style={{ fontSize: '36px', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '12px' }}>
-                            Up and running in 3 steps
+                        <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '14px', color: '#1a1a1a' }}>
+                            Up and running in minutes
                         </h2>
+                        <p style={{ color: '#4a4a4a', fontSize: '16px', maxWidth: '400px', margin: '0 auto', lineHeight: 1.7 }}>
+                            No installation. No hardware required. Just sign up and start selling.
+                        </p>
                     </div>
 
-                    <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px' }}>
+                    <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px' }}>
                         {[
                             {
-                                step: '01',
-                                title: 'Create your shop',
-                                desc: 'Sign up and set up your shop profile in under 5 minutes. No technical knowledge needed.',
+                                num:    '1',
+                                title:  'Create your shop',
+                                desc:   'Sign up, enter your shop name and you are ready. The whole setup takes less than 5 minutes.',
+                                detail: ['Enter shop name', 'Add your logo', 'Set currency to KES'],
                             },
                             {
-                                step: '02',
-                                title: 'Add your products',
-                                desc: 'Import your product list with prices, SKUs and stock levels. Set low stock alerts.',
+                                num:    '2',
+                                title:  'Add your products',
+                                desc:   'Enter your products with prices, SKUs and opening stock. Set low stock alerts.',
+                                detail: ['Add product names and prices', 'Set stock quantities', 'Organize by category'],
                             },
                             {
-                                step: '03',
-                                title: 'Start selling',
-                                desc: 'Your cashiers can start processing sales immediately. Cash, M-Pesa or card.',
+                                num:    '3',
+                                title:  'Start selling',
+                                desc:   'Tap products, select payment method and charge. Your cashier is operational immediately.',
+                                detail: ['Tap to add to cart', 'Accept M-Pesa or cash', 'Receipt generated instantly'],
                             },
                         ].map((s, i) => (
-                            <div key={s.step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div className="step-number">{s.step}</div>
-                                    {i < 2 && (
-                                        <div style={{ flex: 1, height: '1px', background: '#e2e8f0', display: 'none' }} />
-                                    )}
+                            <div key={s.num} style={{
+                                background: '#fff', padding: '36px 32px',
+                                border: '1px solid #e1e3e5',
+                                borderRadius: i === 0 ? '12px 0 0 12px' : i === 2 ? '0 12px 12px 0' : '0',
+                                borderLeft: i > 0 ? 'none' : '1px solid #e1e3e5',
+                            }}>
+                                <div style={{
+                                    width: '40px', height: '40px', borderRadius: '50%',
+                                    background: '#008060', color: '#fff',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '16px', fontWeight: 700, marginBottom: '20px',
+                                }}>
+                                    {s.num}
                                 </div>
-                                <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>{s.title}</h3>
-                                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
+                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1a1a1a', marginBottom: '10px', letterSpacing: '-0.01em' }}>
+                                    {s.title}
+                                </h3>
+                                <p style={{ color: '#4a4a4a', fontSize: '14px', lineHeight: 1.65, marginBottom: '20px' }}>
+                                    {s.desc}
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {s.detail.map(d => (
+                                        <div key={d} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="20,6 9,17 4,12"/>
+                                            </svg>
+                                            <span style={{ color: '#4a4a4a', fontSize: '13px' }}>{d}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         ))}
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                        <button className="btn-green" onClick={() => navigate('/login')}>
+                            Get started for free →
+                        </button>
                     </div>
                 </div>
             </section>
 
-            {/* ── Pricing ── */}
-            <section id="pricing" style={{ padding: '80px 24px' }}>
-                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '52px' }}>
-                        <p style={{ color: '#2563eb', fontSize: '13px', fontWeight: 500, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {/* Pricing*/}
+            <section id="pricing" style={{ padding: '88px 32px' }}>
+                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+                        <p style={{ color: '#008060', fontSize: '13px', fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             Pricing
                         </p>
-                        <h2 style={{ fontSize: '36px', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '12px' }}>
-                            Simple, honest pricing
+                        <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '14px', color: '#1a1a1a' }}>
+                            Simple, transparent pricing
                         </h2>
-                        <p style={{ color: '#64748b', fontSize: '16px', lineHeight: 1.7 }}>
-                            No hidden fees. No per-transaction charges. Pay monthly and cancel anytime.
+                        <p style={{ color: '#4a4a4a', fontSize: '16px', maxWidth: '400px', margin: '0 auto', lineHeight: 1.7 }}>
+                            No hidden fees. No setup costs. No per-transaction charges.
                         </p>
                     </div>
 
-                    <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                    <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'start' }}>
                         {[
                             {
                                 name:     'Starter',
-                                price:    'KES 999',
-                                period:   '/month',
-                                desc:     'Perfect for small retail shops just getting started.',
-                                features: ['1 cashier', 'Up to 200 products', 'Basic reports', 'M-Pesa integration', 'Email support'],
+                                price:    '999',
+                                desc:     'For small shops just getting started with digital POS.',
+                                features: ['1 cashier account', 'Up to 200 products', 'Sales history', 'M-Pesa integration', 'Basic reports', 'Email support'],
                                 cta:      'Get started',
                                 popular:  false,
-                                color:    '#64748b',
                             },
                             {
                                 name:     'Business',
-                                price:    'KES 2,499',
-                                period:   '/month',
-                                desc:     'For growing shops that need more power and users.',
-                                features: ['Up to 5 users', 'Unlimited products', 'Advanced reports', 'M-Pesa integration', 'Customer management', 'Priority support'],
+                                price:    '2,499',
+                                desc:     'For growing shops that need more users and advanced features.',
+                                features: ['Up to 5 user accounts', 'Unlimited products', 'Advanced reports', 'M-Pesa integration', 'Customer management', 'Inventory alerts', 'Priority support'],
                                 cta:      'Start free trial',
                                 popular:  true,
-                                color:    '#2563eb',
                             },
                             {
                                 name:     'Enterprise',
                                 price:    'Custom',
-                                period:   '',
-                                desc:     'For wholesalers and multi-branch businesses.',
-                                features: ['Unlimited users', 'Multi-branch', 'Custom reports', 'API access', 'Dedicated support', 'Custom training'],
+                                desc:     'For wholesalers and businesses with multiple branches.',
+                                features: ['Unlimited users', 'Multi-branch support', 'Custom reports', 'API access', 'Dedicated account manager', 'On-site training'],
                                 cta:      'Contact us',
                                 popular:  false,
-                                color:    '#9333ea',
                             },
                         ].map(p => (
                             <div key={p.name} className={`pricing-card${p.popular ? ' popular' : ''}`}>
                                 {p.popular && (
                                     <div style={{
-                                        background: '#2563eb', color: '#fff',
-                                        fontSize: '11px', fontWeight: 600,
-                                        padding: '4px 10px', borderRadius: '20px',
-                                        display: 'inline-block', marginBottom: '16px',
+                                        background: '#008060', color: '#fff',
+                                        fontSize: '11px', fontWeight: 700,
+                                        padding: '4px 10px', borderRadius: '4px',
+                                        display: 'inline-block', marginBottom: '20px',
+                                        letterSpacing: '0.04em', textTransform: 'uppercase',
                                     }}>
                                         Most popular
                                     </div>
                                 )}
-                                <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '4px' }}>{p.name}</p>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '32px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.02em' }}>{p.price}</span>
-                                    <span style={{ color: '#94a3b8', fontSize: '14px' }}>{p.period}</span>
+                                <p style={{ color: '#6d7175', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>{p.name}</p>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px', marginBottom: '6px' }}>
+                                    {p.price !== 'Custom' && (
+                                        <span style={{ color: '#6d7175', fontSize: '15px', fontWeight: 500 }}>KES</span>
+                                    )}
+                                    <span style={{ fontSize: '36px', fontWeight: 800, color: '#1a1a1a', letterSpacing: '-0.03em' }}>{p.price}</span>
+                                    {p.price !== 'Custom' && (
+                                        <span style={{ color: '#6d7175', fontSize: '14px' }}>/month</span>
+                                    )}
                                 </div>
-                                <p style={{ color: '#64748b', fontSize: '13px', lineHeight: 1.6, marginBottom: '20px' }}>{p.desc}</p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-                                    {p.features.map(f => (
-                                        <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={p.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="20,6 9,17 4,12"/>
-                                            </svg>
-                                            <span style={{ color: '#64748b', fontSize: '13px' }}>{f}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                <p style={{ color: '#4a4a4a', fontSize: '13px', lineHeight: 1.6, marginBottom: '24px' }}>{p.desc}</p>
                                 <button
-                                    onClick={() => navigate('/login')}
+                                    onClick={() => p.cta === 'Contact us'
+                                        ? navigate('/contact')
+                                        : navigate('/login')
+                                    }
                                     style={{
-                                        width: '100%', padding: '11px',
-                                        border: p.popular ? 'none' : '1.5px solid #e2e8f0',
-                                        borderRadius: '8px',
-                                        background: p.popular ? '#2563eb' : '#fff',
-                                        color: p.popular ? '#fff' : '#0f172a',
-                                        fontSize: '14px', fontWeight: 500,
+                                        width: '100%', padding: '12px',
+                                        border: p.popular ? 'none' : '1.5px solid #e1e3e5',
+                                        borderRadius: '6px',
+                                        background: p.popular ? '#008060' : '#fff',
+                                        color: p.popular ? '#fff' : '#1a1a1a',
+                                        fontSize: '14px', fontWeight: 600,
                                         cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                                        transition: 'all 0.15s',
+                                        marginBottom: '24px', transition: 'all 0.15s',
+                                    }}
+                                    onMouseOver={e => {
+                                        if (p.popular) (e.currentTarget as HTMLButtonElement).style.background = '#005c43'
+                                        else (e.currentTarget as HTMLButtonElement).style.borderColor = '#1a1a1a'
+                                    }}
+                                    onMouseOut={e => {
+                                        if (p.popular) (e.currentTarget as HTMLButtonElement).style.background = '#008060'
+                                        else (e.currentTarget as HTMLButtonElement).style.borderColor = '#e1e3e5'
                                     }}
                                 >
                                     {p.cta}
                                 </button>
+                                <div style={{ borderTop: '1px solid #e1e3e5', paddingTop: '20px' }}>
+                                    <p style={{ color: '#6d7175', fontSize: '12px', fontWeight: 600, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                        What's included
+                                    </p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {p.features.map(f => (
+                                            <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#008060" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
+                                                    <polyline points="20,6 9,17 4,12"/>
+                                                </svg>
+                                                <span style={{ color: '#4a4a4a', fontSize: '13px', lineHeight: 1.5 }}>{f}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <p style={{ textAlign: 'center', color: '#6d7175', fontSize: '13px', marginTop: '24px' }}>
+                        All plans include a 14-day free trial. No credit card required.
+                    </p>
+                </div>
+            </section>
+
+            {/*Testimonials*/}
+            <section style={{ background: '#f6f6f7', borderTop: '1px solid #e1e3e5', padding: '80px 32px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+                        <h2 style={{ fontSize: '32px', fontWeight: 700, letterSpacing: '-0.02em', color: '#1a1a1a' }}>
+                            Trusted by Kenyan businesses
+                        </h2>
+                    </div>
+                    <div className="reviews-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                        {[
+                            {
+                                quote: '"Setting up NuPOS took less than 10 minutes. My cashiers were selling the same day."',
+                                name:  'James M.',
+                                shop:  'Westlands Minimart, Nairobi',
+                            },
+                            {
+                                quote: '"The M-Pesa integration is seamless. No more manual reconciliation at end of day."',
+                                name:  'Sarah K.',
+                                shop:  'Purity Pharmacy, Mombasa',
+                            },
+                            {
+                                quote: '"Finally a POS that understands how Kenyan shops actually work."',
+                                name:  'Peter O.',
+                                shop:  'TechHub Electronics, Kisumu',
+                            },
+                        ].map(t => (
+                            <div key={t.name} className="testimonial-card">
+                                <div style={{ marginBottom: '14px' }}>
+                                    {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#fbbf24', fontSize: '14px' }}>★</span>)}
+                                </div>
+                                <p style={{ color: '#1a1a1a', fontSize: '14px', lineHeight: 1.7, marginBottom: '20px', fontStyle: 'italic' }}>
+                                    {t.quote}
+                                </p>
+                                <div>
+                                    <p style={{ color: '#1a1a1a', fontSize: '13px', fontWeight: 700, margin: '0 0 2px' }}>{t.name}</p>
+                                    <p style={{ color: '#6d7175', fontSize: '12px', margin: 0 }}>{t.shop}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* ── CTA banner ── */}
-            <section style={{ padding: '80px 24px', background: '#0f172a' }}>
-                <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: '16px' }}>
-                        Ready to modernize your shop?
+            {/* CTA banner*/}
+            <section style={{ background: '#008060', padding: '80px 32px' }}>
+                <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
+                    <h2 style={{ fontSize: '38px', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', marginBottom: '16px', lineHeight: 1.1 }}>
+                        Ready to run your shop smarter?
                     </h2>
-                    <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: 1.7, marginBottom: '32px' }}>
-                        Join hundreds of Kenyan businesses already using NuPOS to run smarter operations.
+                    <p style={{ color: '#c2e0d5', fontSize: '16px', lineHeight: 1.7, marginBottom: '32px' }}>
+                        Start your free 14-day trial today. No credit card needed.
                     </p>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button className="btn-primary" onClick={() => navigate('/login')} style={{ padding: '14px 32px', fontSize: '16px' }}>
-                            Start for free →
+                        <button className="btn-white" onClick={() => navigate('/login')}>
+                            Start free trial →
                         </button>
-                        <button style={{
-                            padding: '14px 32px', fontSize: '16px',
-                            border: '1.5px solid #334155', borderRadius: '8px',
-                            background: 'transparent', color: '#94a3b8',
-                            cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                            transition: 'all 0.15s',
-                        }}>
+                        <button
+                            onClick={() => navigate('/contact')}
+                            style={{
+                                padding: '14px 28px', fontSize: '15px',
+                                border: '1.5px solid rgba(255,255,255,0.4)',
+                                borderRadius: '6px', background: 'transparent',
+                                color: '#fff', cursor: 'pointer',
+                                fontFamily: "'DM Sans', sans-serif", fontWeight: 500,
+                            }}
+                        >
                             Contact sales
                         </button>
                     </div>
                 </div>
             </section>
 
-            {/* ── Footer ── */}
-            <footer style={{ background: '#0f172a', borderTop: '1px solid #1e293b', padding: '48px 24px 32px' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '40px', marginBottom: '40px' }}>
-                        {/* Brand */}
+            {/* Footer*/}
+            <footer style={{ background: '#1a1a1a', padding: '56px 32px 32px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr 1fr 1fr', gap: '48px', marginBottom: '48px' }}>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                                <div style={{ width: '32px', height: '32px', background: '#2563eb', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#008060', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
                                         <line x1="3" y1="6" x2="21" y2="6"/>
                                         <path d="M16 10a4 4 0 01-8 0"/>
                                     </svg>
                                 </div>
-                                <span style={{ color: '#f1f5f9', fontSize: '16px', fontWeight: 600 }}>NuPOS</span>
+                                <span style={{ color: '#fff', fontSize: '15px', fontWeight: 700 }}>NuPOS</span>
                             </div>
-                            <p style={{ color: '#475569', fontSize: '13px', lineHeight: 1.7, maxWidth: '240px' }}>
-                                Modern cloud-based POS system built for Kenyan businesses. Fast, reliable, M-Pesa ready.
+                            <p style={{ color: '#6d7175', fontSize: '13px', lineHeight: 1.7, maxWidth: '240px', marginBottom: '16px' }}>
+                                Modern cloud-based POS built for Kenyan businesses. Fast, reliable, M-Pesa ready.
                             </p>
+                            <p style={{ color: '#4a4a4a', fontSize: '12px' }}>Built in Kenya 🇰🇪</p>
                         </div>
 
-                        {/* Product */}
-                        <div>
-                            <p style={{ color: '#f1f5f9', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>Product</p>
-                            {['Features', 'Pricing', 'Changelog', 'Roadmap'].map(l => (
-                                <p key={l} style={{ marginBottom: '10px' }}>
-                                    <a href="#" style={{ color: '#475569', fontSize: '13px', textDecoration: 'none', transition: 'color 0.15s' }}
-                                       onMouseOver={e => (e.currentTarget.style.color = '#94a3b8')}
-                                       onMouseOut={e  => (e.currentTarget.style.color = '#475569')}
-                                    >{l}</a>
-                                </p>
-                            ))}
-                        </div>
-
-                        {/* Company */}
-                        <div>
-                            <p style={{ color: '#f1f5f9', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>Company</p>
-                            {['About', 'Blog', 'Careers', 'Contact'].map(l => (
-                                <p key={l} style={{ marginBottom: '10px' }}>
-                                    <a href="#" style={{ color: '#475569', fontSize: '13px', textDecoration: 'none', transition: 'color 0.15s' }}
-                                       onMouseOver={e => (e.currentTarget.style.color = '#94a3b8')}
-                                       onMouseOut={e  => (e.currentTarget.style.color = '#475569')}
-                                    >{l}</a>
-                                </p>
-                            ))}
-                        </div>
-
-                        {/* Legal */}
-                        <div>
-                            <p style={{ color: '#f1f5f9', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>Legal</p>
-                            {['Privacy policy', 'Terms of service', 'Cookie policy'].map(l => (
-                                <p key={l} style={{ marginBottom: '10px' }}>
-                                    <a href="#" style={{ color: '#475569', fontSize: '13px', textDecoration: 'none', transition: 'color 0.15s' }}
-                                       onMouseOver={e => (e.currentTarget.style.color = '#94a3b8')}
-                                       onMouseOut={e  => (e.currentTarget.style.color = '#475569')}
-                                    >{l}</a>
-                                </p>
-                            ))}
-                        </div>
+                        {[
+                            {
+                                title: 'Product',
+                                links: [
+                                    { label: 'Features',      action: () => scrollTo('features') },
+                                    { label: 'Pricing',       action: () => scrollTo('pricing') },
+                                    { label: 'How it works', action: () => scrollTo('how-it-works') },
+                                ],
+                            },
+                            {
+                                title: 'Company',
+                                links: [
+                                    { label: 'Contact us', action: () => navigate('/contact') },
+                                    { label: 'About',      action: () => navigate('/contact') },
+                                    { label: 'Careers',    action: () => navigate('/contact') },
+                                ],
+                            },
+                            {
+                                title: 'Account',
+                                links: [
+                                    { label: 'Log in',       action: () => navigate('/login') },
+                                    { label: 'Sign up free', action: () => navigate('/login') },
+                                    { label: 'View pricing', action: () => scrollTo('pricing') },
+                                ],
+                            },
+                        ].map(col => (
+                            <div key={col.title}>
+                                <p style={{ color: '#fff', fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>{col.title}</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {col.links.map(l => (
+                                        <button
+                                            key={l.label}
+                                            onClick={l.action}
+                                            style={{
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                color: '#6d7175', fontSize: '13px', textAlign: 'left',
+                                                padding: 0, fontFamily: "'DM Sans', sans-serif",
+                                                transition: 'color 0.15s',
+                                            }}
+                                            onMouseOver={e => (e.currentTarget.style.color = '#fff')}
+                                            onMouseOut={e  => (e.currentTarget.style.color = '#6d7175')}
+                                        >
+                                            {l.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Bottom bar */}
-                    <div style={{ borderTop: '1px solid #1e293b', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                        <p style={{ color: '#334155', fontSize: '13px' }}>
-                            © {new Date().getFullYear()} NuPOS. Built in Kenya 🇰🇪
-                        </p>
-                        <p style={{ color: '#334155', fontSize: '13px' }}>
-                            Made with ❤️ for Kenyan businesses
-                        </p>
+                    <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                        <p style={{ color: '#4a4a4a', fontSize: '13px' }}>© {new Date().getFullYear()} NuPOS. All rights reserved.</p>
+                        <p style={{ color: '#4a4a4a', fontSize: '13px' }}>Made with ❤️ for Kenyan businesses</p>
                     </div>
                 </div>
             </footer>

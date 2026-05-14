@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { productApi, categoryApi } from '../../api/product.api'
 import { customerApi } from '../../api/customer.api'
@@ -9,6 +9,7 @@ import { formatCurrency } from '../../utils/helpers'
 import { toast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
+import BarcodeScanner from '../../components/BarcodeScanner'
 
 //  Payment method button
 function PaymentBtn({
@@ -39,8 +40,8 @@ function PaymentBtn({
         >
             <span style={{ color: selected ? color : '#94a3b8' }}>{icon}</span>
             <span style={{ fontSize: '12px', fontWeight: 500, color: selected ? color : '#64748b' }}>
-        {label}
-      </span>
+                {label}
+            </span>
         </button>
     )
 }
@@ -364,6 +365,11 @@ export default function NewSalePage() {
     const [completedSale,    setCompletedSale]    = useState<any>(null)
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
+    const [barcodeBuffer, setBarcodeBuffer] = useState('')
+    const [barcodeError, setBarcodeError]   = useState('')
+    const barcodeTimeout                    = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const [showCamera,   setShowCamera]     = useState(false)
+
     const searchRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -392,6 +398,54 @@ export default function NewSalePage() {
     const total      = getTotal()
     const discount_  = parseFloat(discount || '0')
     const finalTotal = Math.max(0, total - discount_)
+
+    // USB barcode scanners type very fast — faster than a human
+    // We detect this by measuring time between keystrokes
+    // If the input is completed in under 100ms it came from a scanner not a human
+    const handleBarcodeInput = useCallback((value: string) => {
+        setBarcodeBuffer(value)
+
+        // Clear existing timeout
+        if (barcodeTimeout.current) clearTimeout(barcodeTimeout.current)
+
+        // If value looks like a barcode (8+ chars) search immediately
+        if (value.length >= 8) {
+            barcodeTimeout.current = setTimeout(async () => {
+                const match = products.find(
+                    p => p.barcode === value || p.sku === value
+                )
+                if (match) {
+                    addItem(match)
+                    setSearch('')
+                    setBarcodeBuffer('')
+                    setBarcodeError('')
+                    toast.success(`${match.name} added to cart`)
+                } else {
+                    setBarcodeError(`No product found for barcode: ${value}`)
+                    setTimeout(() => setBarcodeError(''), 3000)
+                }
+            }, 100)
+        } else {
+            // Normal search
+            setSearch(value)
+        }
+    }, [products, addItem])
+
+    // Camera Scan Handler
+    const handleCameraScan = (barcode: string) => {
+        setShowCamera(false)
+        const match = products.find(
+            p => p.barcode === barcode || p.sku === barcode
+        )
+        if (match) {
+            addItem(match)
+            setBarcodeError('')
+            toast.success(`${match.name} added to cart`)
+        } else {
+            setBarcodeError(`No product found for barcode: ${barcode}`)
+            setTimeout(() => setBarcodeError(''), 3000)
+        }
+    }
 
     //  Checkout mutation
     const checkoutMutation = useMutation({
@@ -492,7 +546,7 @@ export default function NewSalePage() {
                 overflow: 'hidden',
             }}>
 
-                {/* Search */}
+                {/* Search / barcode input */}
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#fff' }}>
                     <div style={{ position: 'relative' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -504,19 +558,78 @@ export default function NewSalePage() {
                             ref={searchRef}
                             type="text"
                             placeholder="Search products or scan barcode..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            style={{
-                                width: '100%', padding: '10px 12px 10px 40px',
-                                border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                                fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                                fontFamily: "'DM Sans', sans-serif", color: '#0f172a',
-                                background: '#f8fafc',
+                            value={barcodeBuffer || search}
+                            onChange={e => handleBarcodeInput(e.target.value)}
+                            onKeyDown={e => {
+                                // Enter key — treat as barcode scan
+                                const currentVal = barcodeBuffer || search;
+                                if (e.key === 'Enter' && currentVal.trim()) {
+                                    const match = products.find(
+                                        p => p.barcode === currentVal.trim() ||
+                                            p.sku     === currentVal.trim() ||
+                                            p.name.toLowerCase() === currentVal.trim().toLowerCase()
+                                    )
+                                    if (match) {
+                                        addItem(match)
+                                        setSearch('')
+                                        setBarcodeBuffer('')
+                                        setBarcodeError('')
+                                        toast.success(`${match.name} added to cart`)
+                                    } else {
+                                        setBarcodeError(`No product found for "${currentVal.trim()}"`)
+                                        setTimeout(() => setBarcodeError(''), 3000)
+                                    }
+                                    e.preventDefault()
+                                }
                             }}
-                            onFocus={e  => (e.target.style.borderColor = '#2563eb')}
-                            onBlur={e   => (e.target.style.borderColor = '#e2e8f0')}
+                            style={{
+                                width: '100%', padding: '10px 44px 10px 40px',
+                                border: `1.5px solid ${barcodeError ? '#ef4444' : '#e2e8f0'}`,
+                                borderRadius: '10px', fontSize: '14px', outline: 'none',
+                                boxSizing: 'border-box', fontFamily: "'DM Sans', sans-serif",
+                                color: '#0f172a', background: '#f8fafc', transition: 'border-color 0.2s',
+                            }}
+                            onFocus={e  => (e.target.style.borderColor = barcodeError ? '#ef4444' : '#2563eb')}
+                            onBlur={e   => (e.target.style.borderColor = barcodeError ? '#ef4444' : '#e2e8f0')}
                         />
+
+                        {/* Camera scan button */}
+                        <button
+                            onClick={() => setShowCamera(true)}
+                            title="Scan with camera"
+                            style={{
+                                position: 'absolute', right: '10px', top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: '#94a3b8', padding: '4px',
+                                display: 'flex', alignItems: 'center',
+                                transition: 'color 0.15s',
+                            }}
+                            onMouseOver={e => (e.currentTarget.style.color = '#2563eb')}
+                            onMouseOut={e  => (e.currentTarget.style.color = '#94a3b8')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </button>
                     </div>
+
+                    {/* Barcode error */}
+                    {barcodeError && (
+                        <div style={{
+                            marginTop: '8px', padding: '8px 12px',
+                            background: '#fef2f2', border: '1px solid #fecaca',
+                            borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px',
+                        }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="15" y1="9" x2="9" y2="15"/>
+                                <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                            <span style={{ color: '#ef4444', fontSize: '12px' }}>{barcodeError}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Category tabs */}
@@ -851,6 +964,14 @@ export default function NewSalePage() {
                     sale={completedSale}
                     onClose={() => setCompletedSale(null)}
                     onNewSale={handleNewSale}
+                />
+            )}
+
+            {/* Camera barcode scanner */}
+            {showCamera && (
+                <BarcodeScanner
+                    onScan={handleCameraScan}
+                    onClose={() => setShowCamera(false)}
                 />
             )}
         </div>

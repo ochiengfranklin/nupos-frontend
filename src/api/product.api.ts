@@ -13,6 +13,11 @@ export const productApi = {
     getById: (id: string) =>
         api.get<ApiResponse<Product>>(`/products/${id}`),
 
+    getByBarcode: (barcode: string) =>
+        api.get<ApiResponse<Product[]>>('/products', {
+            params: { search: barcode, limit: 1 }
+        }),
+
     create: (data: Partial<Product> & { price: number; costPrice: number }) =>
         api.post<ApiResponse<Product>>('/products', data),
 

@@ -18,6 +18,13 @@ export const authApi = {
     login: (data: LoginPayload) =>
         api.post<ApiResponse<AuthResponse>>('/auth/login', data),
 
+    loginDemo: () =>
+        api.post<ApiResponse<AuthResponse>>('/auth/login', {
+            email:    'demo@nupos.app',
+            password: 'Demo1234',
+            shopSlug: 'demo-minimart',
+        }),
+
     register: (data: {
         shopName:  string
         shopPhone?: string

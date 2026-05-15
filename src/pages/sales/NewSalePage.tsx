@@ -4,8 +4,9 @@ import { productApi, categoryApi } from '../../api/product.api'
 import { customerApi } from '../../api/customer.api'
 import { saleApi } from '../../api/sale.api'
 import { useCartStore } from '../../store/cart.store'
+import { useAuthStore } from '../../store/auth.store'
 import type {Product, Category, Customer} from '../../types'
-import { formatCurrency } from '../../utils/helpers'
+import { formatCurrency, formatWhatsAppReceipt, openWhatsAppReceipt } from '../../utils/helpers'
 import { toast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
@@ -40,28 +41,55 @@ function PaymentBtn({
         >
             <span style={{ color: selected ? color : '#94a3b8' }}>{icon}</span>
             <span style={{ fontSize: '12px', fontWeight: 500, color: selected ? color : '#64748b' }}>
-                {label}
-            </span>
+        {label}
+      </span>
         </button>
     )
 }
 
 //   Receipt modal
 function ReceiptModal({
-                          sale, onClose, onNewSale,
+                          sale, onClose, onNewSale, shopName,
                       }: {
     sale:      any
     onClose:   () => void
     onNewSale: () => void
+    shopName:  string
 }) {
+    const [phone,      setPhone]      = useState('')
+    const [showPhone,  setShowPhone]  = useState(false)
+    const [sending,    setSending]    = useState(false)
+
+    const handleWhatsApp = () => {
+        if (!phone.trim()) return
+        setSending(true)
+
+        const receiptText = formatWhatsAppReceipt({
+            receiptNumber:  sale.receiptNumber,
+            shopName,
+            items:          sale.items || [],
+            subtotal:       sale.subtotal,
+            discountAmount: sale.discountAmount,
+            totalAmount:    sale.totalAmount,
+            paymentMethod:  sale.paymentMethod,
+            createdAt:      sale.createdAt,
+        })
+
+        openWhatsAppReceipt(phone, receiptText)
+        setSending(false)
+        setShowPhone(false)
+        setPhone('')
+        toast.success('WhatsApp opened with receipt')
+    }
+
     return (
         <Modal title="Sale complete" onClose={onClose} maxWidth={420}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            {/* Success icon */}
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{
-                    width: '56px', height: '56px',
-                    background: '#f0fdf4', borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 12px',
+                    width: '56px', height: '56px', background: '#f0fdf4',
+                    borderRadius: '50%', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', margin: '0 auto 12px',
                 }}>
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20,6 9,17 4,12"/>
@@ -75,39 +103,110 @@ function ReceiptModal({
                 </p>
             </div>
 
-            <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
+            {/* Receipt summary */}
+            <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Subtotal</span>
-                    <span style={{ color: '#0f172a', fontSize: '13px' }}>{formatCurrency(sale?.subtotal || 0)}</span>
+                    <span style={{ color: '#0f172a', fontSize: '13px' }}>KES {parseFloat(sale?.subtotal || '0').toFixed(2)}</span>
                 </div>
                 {parseFloat(sale?.discountAmount || '0') > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span style={{ color: '#64748b', fontSize: '13px' }}>Discount</span>
-                        <span style={{ color: '#dc2626', fontSize: '13px' }}>-{formatCurrency(sale?.discountAmount || 0)}</span>
+                        <span style={{ color: '#dc2626', fontSize: '13px' }}>-KES {parseFloat(sale?.discountAmount || '0').toFixed(2)}</span>
                     </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                     <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>Total</span>
-                    <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>{formatCurrency(sale?.totalAmount || 0)}</span>
+                    <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>KES {parseFloat(sale?.totalAmount || '0').toFixed(2)}</span>
                 </div>
             </div>
 
+            {/* WhatsApp phone input */}
+            {showPhone ? (
+                <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', color: '#64748b', fontSize: '12px', fontWeight: 500, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Customer phone number
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={e => setPhone(e.target.value)}
+                            placeholder="07XXXXXXXX"
+                            autoFocus
+                            style={{
+                                flex: 1, padding: '9px 12px',
+                                border: '1px solid #e2e8f0', borderRadius: '8px',
+                                fontSize: '14px', outline: 'none',
+                                fontFamily: "'DM Sans', sans-serif", color: '#0f172a',
+                            }}
+                            onKeyDown={e => e.key === 'Enter' && handleWhatsApp()}
+                        />
+                        <button
+                            onClick={handleWhatsApp}
+                            disabled={!phone.trim() || sending}
+                            style={{
+                                padding: '9px 16px', borderRadius: '8px',
+                                border: 'none', background: '#16a34a',
+                                color: '#fff', fontSize: '14px', fontWeight: 500,
+                                cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                                opacity: !phone.trim() ? 0.6 : 1,
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                            </svg>
+                            Send
+                        </button>
+                        <button
+                            onClick={() => { setShowPhone(false); setPhone('') }}
+                            style={{
+                                padding: '9px 12px', borderRadius: '8px',
+                                border: '1px solid #e2e8f0', background: '#fff',
+                                color: '#64748b', fontSize: '14px', cursor: 'pointer',
+                                fontFamily: "'DM Sans', sans-serif",
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <button
+                    onClick={() => setShowPhone(true)}
+                    style={{
+                        width: '100%', padding: '10px',
+                        border: '1.5px solid #dcfce7', borderRadius: '8px',
+                        background: '#f0fdf4', color: '#16a34a',
+                        fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+                        fontFamily: "'DM Sans', sans-serif",
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: '8px',
+                        marginBottom: '10px',
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#16a34a">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    Send WhatsApp receipt
+                </button>
+            )}
+
+            {/* Action buttons */}
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={onClose} style={{
-                    flex: 1, padding: '10px',
-                    border: '1px solid #e2e8f0', borderRadius: '8px',
-                    background: '#fff', color: '#64748b',
-                    fontSize: '14px', cursor: 'pointer',
+                    flex: 1, padding: '10px', borderRadius: '8px',
+                    border: '1px solid #e2e8f0', background: '#fff',
+                    color: '#64748b', fontSize: '14px', cursor: 'pointer',
                     fontFamily: "'DM Sans', sans-serif",
                 }}>
                     Close
                 </button>
                 <button onClick={onNewSale} style={{
-                    flex: 1, padding: '10px',
-                    border: 'none', borderRadius: '8px',
-                    background: '#2563eb', color: '#fff',
-                    fontSize: '14px', fontWeight: 500,
-                    cursor: 'pointer',
+                    flex: 1, padding: '10px', borderRadius: '8px',
+                    border: 'none', background: '#2563eb', color: '#fff',
+                    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
                     fontFamily: "'DM Sans', sans-serif",
                 }}>
                     New sale
@@ -350,6 +449,7 @@ function AddCustomerModal({
 
 // Main cashier page
 export default function NewSalePage() {
+    const { shop } = useAuthStore()
     const {
         items, addItem, updateQuantity, clearCart,
         getTotal, setCustomer, customerId,
@@ -964,6 +1064,7 @@ export default function NewSalePage() {
                     sale={completedSale}
                     onClose={() => setCompletedSale(null)}
                     onNewSale={handleNewSale}
+                    shopName={shop?.name || 'Our Shop'}
                 />
             )}
 

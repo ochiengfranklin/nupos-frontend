@@ -13,6 +13,7 @@ import UsersPage     from './pages/users/UsersPage'
 import ReportsPage   from './pages/reports/ReportsPage'
 import Layout        from './components/layout/Layout'
 import ContactPage   from './pages/ContactPage'
+import InventoryPage from "./pages/inventory/InventoryPage.tsx";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn())
@@ -70,6 +71,7 @@ export default function App() {
                     <Route path="customers" element={<CustomersPage />} />
                     <Route path="users"     element={<UsersPage />} />
                     <Route path="reports"   element={<ReportsPage />} />
+                    <Route path="inventory" element={<InventoryPage />} />
                 </Route>
 
                 <Route path="/contact" element={<ContactPage />} />

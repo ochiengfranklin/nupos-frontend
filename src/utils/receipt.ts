@@ -1,7 +1,7 @@
 interface ReceiptData {
     receiptNumber:  string
     shopName:       string
-    items:          { name: string; quantity: number; unitPrice: string; subtotal: string }[]
+    items:          any[] // Updated to accept both item structures
     subtotal:       number | string
     discountAmount: number | string
     totalAmount:    number | string
@@ -11,8 +11,10 @@ interface ReceiptData {
 
 export const formatWhatsAppReceipt = (data: ReceiptData): string => {
     const line  = '─────────────────────'
-    const items = data.items.map(item =>
-        `${item.name}\n  ${item.quantity} × KES ${parseFloat(item.unitPrice).toFixed(2)} = KES ${parseFloat(item.subtotal).toFixed(2)}`
+
+    // Updated formatter to handle both flat name and nested product.name
+    const items = data.items.map((item: any) =>
+        `${item.name || item.product?.name || 'Product'}\n  ${item.quantity} × KES ${parseFloat(item.unitPrice).toFixed(2)} = KES ${parseFloat(item.subtotal).toFixed(2)}`
     ).join('\n')
 
     const discount = parseFloat(String(data.discountAmount))

@@ -1,6 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth.store'
 import { authApi } from '../../api/auth.api'
+import OnlineStatus from '../ui/OnlineStatus'
+import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 
 const navItems = [
     {
@@ -34,6 +36,16 @@ const navItems = [
                 <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
                 <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
                 <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+        ),
+    },
+    {
+        path: '/app/offline-queue',
+        label: 'Offline queue',
+        roles: ['OWNER', 'MANAGER', 'CASHIER'],
+        icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.56 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
             </svg>
         ),
     },
@@ -114,6 +126,8 @@ const navItems = [
 export default function Sidebar() {
     const navigate  = useNavigate()
     const { user, shop, logout } = useAuthStore()
+
+    useOnlineStatus() // registers the event listeners
 
     const visibleItems = navItems.filter((item) =>
         user ? item.roles.includes(user.role) : false
@@ -295,6 +309,10 @@ export default function Sidebar() {
                             {user?.role}
                         </p>
                     </div>
+                </div>
+
+                <div style={{ padding: '8px 12px', marginBottom: '4px' }}>
+                    <OnlineStatus />
                 </div>
 
                 {/* Logout */}

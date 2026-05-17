@@ -11,6 +11,9 @@ import { toast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
 import BarcodeScanner from '../../components/BarcodeScanner'
+import { useOfflineStore, type OfflineSale } from '../../store/offline.store'
+import { useOnlineStatus } from '../../hooks/useOnlineStatus'
+import { v4 as uuidv4 } from 'uuid'
 
 //  Payment method button
 function PaymentBtn({
@@ -455,6 +458,9 @@ export default function NewSalePage() {
         getTotal, setCustomer, customerId,
     } = useCartStore()
 
+    const isOnline        = useOnlineStatus()
+    const { cachedProducts, cacheProducts, addToQueue } = useOfflineStore()
+
     const [search,           setSearch]           = useState('')
     const [activeCategory,   setActiveCategory]   = useState('')
     const [paymentMethod,    setPaymentMethod]    = useState<'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'>('CASH')
@@ -484,16 +490,25 @@ export default function NewSalePage() {
 
     const { data: productData, isLoading } = useQuery({
         queryKey: ['products-pos', search, activeCategory],
-        queryFn: () =>
-            productApi.getAll({
+        queryFn: async () => {
+            const result = await productApi.getAll({
                 search:     search         || undefined,
                 categoryId: activeCategory || undefined,
                 limit: 50,
-            }).then(r => r.data.data || []),
+            }).then(r => r.data.data || [])
+
+            // Cache products for offline use
+            if (result.length > 0) cacheProducts(result)
+            return result
+        },
+        // Use cached data when offline
+        placeholderData: isOnline ? undefined : cachedProducts,
     })
 
     const categories: Category[] = catData    || []
-    const products:   Product[]  = (productData || []).filter((p: Product) => p.isActive && p.stockQuantity > 0)
+    const products:   Product[]  = isOnline
+        ? (productData || []).filter((p: Product) => p.isActive && p.stockQuantity > 0)
+        : cachedProducts.filter(p => p.isActive && p.stockQuantity > 0)
 
     const total      = getTotal()
     const discount_  = parseFloat(discount || '0')
@@ -547,6 +562,71 @@ export default function NewSalePage() {
         }
     }
 
+    const handleCheckout = () => {
+        if (items.length === 0) { toast.warning('Add items to the cart first'); return }
+
+        // Offline checkout
+        if (!isOnline) {
+            if (paymentMethod === 'MPESA') {
+                toast.warning('M-Pesa is not available offline. Use cash.')
+                return
+            }
+            handleOfflineCheckout()
+            return
+        }
+
+        // Online checkout
+        if (paymentMethod === 'MPESA') { setShowMpesa(true); return }
+        checkoutMutation.mutate(undefined)
+    }
+
+    const handleOfflineCheckout = () => {
+        const offlineSale: OfflineSale = {
+            id:             uuidv4(),
+            items:          items.map(i => ({
+                productId: i.product.id,
+                quantity:  i.quantity,
+                name:      i.product.name,
+                price:     i.product.price,
+            })),
+            paymentMethod,
+            discountAmount: discount_,
+            notes,
+            customerId:     customerId || undefined,
+            totalAmount:    finalTotal,
+            createdAt:      new Date().toISOString(),
+            synced:         false,
+        }
+
+        addToQueue(offlineSale)
+
+        // Show offline receipt
+        setCompletedSale({
+            receiptNumber:  `OFFLINE-${Date.now()}`,
+            subtotal:       String(total),
+            discountAmount: String(discount_),
+            totalAmount:    String(finalTotal),
+            paymentMethod,
+            items:          items.map(i => ({
+                name:      i.product.name,
+                quantity:  i.quantity,
+                unitPrice: i.product.price,
+                subtotal:  String(i.subtotal),
+            })),
+            createdAt:  new Date().toISOString(),
+            isOffline:  true,
+        })
+
+        clearCart()
+        setDiscount('')
+        setNotes('')
+        setSelectedCustomer(null)
+        setCustomer(null)
+        setPaymentMethod('CASH')
+
+        toast.success('Sale saved offline — will sync when internet returns')
+    }
+
     //  Checkout mutation
     const checkoutMutation = useMutation({
         mutationFn: (ref?: string) =>
@@ -581,12 +661,6 @@ export default function NewSalePage() {
         },
     })
 
-    const handleCheckout = () => {
-        if (items.length === 0) { toast.warning('Add items to the cart first'); return }
-        if (paymentMethod === 'MPESA') { setShowMpesa(true); return }
-        checkoutMutation.mutate(undefined)
-    }
-
     const handleSelectCustomer = (c: Customer | null) => {
         setSelectedCustomer(c)
         setCustomer(c?.id || null)
@@ -605,7 +679,24 @@ export default function NewSalePage() {
             height: 'calc(100vh - 64px)',
             margin: '-32px',
             fontFamily: "'DM Sans', sans-serif",
+            position: 'relative', // Added to contain the absolute banner if needed, though often it's ok at the page wrapper level
         }}>
+            {/* Offline banner */}
+            {!isOnline && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+                    background: '#ea580c', color: '#fff',
+                    padding: '8px 20px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '8px', fontSize: '13px', fontWeight: 500,
+                }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.56 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
+                    </svg>
+                    You are offline — sales will be saved and synced when internet returns. M-Pesa unavailable.
+                </div>
+            )}
+
             <style>{`
         .product-card {
           background: #fff; border: 1.5px solid #e2e8f0;

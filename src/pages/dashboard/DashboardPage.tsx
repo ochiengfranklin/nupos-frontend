@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { reportApi } from '../../api/report.api'
 import { useAuthStore } from '../../store/auth.store'
 import { formatCurrency, formatDate } from '../../utils/helpers'
+import { useScreenSize } from '../../utils/responsive'
 
 // Stat card
 function StatCard({
@@ -100,6 +101,7 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
 //  Main dashboard
 export default function DashboardPage() {
     const { user } = useAuthStore()
+    const { width } = useScreenSize()
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ['dashboard'],
@@ -171,7 +173,7 @@ export default function DashboardPage() {
             {/* Stat cards */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
                 gap: '16px',
                 marginBottom: '28px',
             }}>
@@ -204,7 +206,7 @@ export default function DashboardPage() {
             {/* Middle row */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 320px',
+                gridTemplateColumns: width < 768 ? '1fr' : '1fr 320px',
                 gap: '16px',
                 marginBottom: '16px',
             }}>
@@ -222,56 +224,58 @@ export default function DashboardPage() {
                             No sales yet today
                         </div>
                     ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                            <tr>
-                                {['Receipt', 'Cashier', 'Method', 'Amount', 'Status', 'Time'].map((h) => (
-                                    <th key={h} style={{
-                                        textAlign: 'left',
-                                        color: '#94a3b8',
-                                        fontSize: '12px',
-                                        fontWeight: 500,
-                                        padding: '0 0 12px',
-                                        borderBottom: '1px solid #f1f5f9',
-                                    }}>
-                                        {h}
-                                    </th>
-                                ))}
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {recent.map((sale: any) => (
-                                <tr key={sale.id}>
-                                    <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: '#0f172a', fontSize: '13px', fontWeight: 500, fontFamily: 'monospace' }}>
-                        {sale.receiptNumber}
-                      </span>
-                                    </td>
-                                    <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: '#64748b', fontSize: '13px' }}>
-                        {sale.cashier?.name || '—'}
-                      </span>
-                                    </td>
-                                    <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
-                                        <PaymentBadge method={sale.paymentMethod} />
-                                    </td>
-                                    <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: '#0f172a', fontSize: '13px', fontWeight: 500 }}>
-                        {formatCurrency(sale.totalAmount)}
-                      </span>
-                                    </td>
-                                    <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
-                                        <StatusBadge status={sale.status} />
-                                    </td>
-                                    <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>
-                        {formatDate(sale.createdAt)}
-                      </span>
-                                    </td>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+                                <thead>
+                                <tr>
+                                    {['Receipt', 'Cashier', 'Method', 'Amount', 'Status', 'Time'].map((h) => (
+                                        <th key={h} style={{
+                                            textAlign: 'left',
+                                            color: '#94a3b8',
+                                            fontSize: '12px',
+                                            fontWeight: 500,
+                                            padding: '0 0 12px',
+                                            borderBottom: '1px solid #f1f5f9',
+                                        }}>
+                                            {h}
+                                        </th>
+                                    ))}
                                 </tr>
-                            ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                {recent.map((sale: any) => (
+                                    <tr key={sale.id}>
+                                        <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
+                                          <span style={{ color: '#0f172a', fontSize: '13px', fontWeight: 500, fontFamily: 'monospace' }}>
+                                            {sale.receiptNumber}
+                                          </span>
+                                        </td>
+                                        <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
+                                          <span style={{ color: '#64748b', fontSize: '13px' }}>
+                                            {sale.cashier?.name || '—'}
+                                          </span>
+                                        </td>
+                                        <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
+                                            <PaymentBadge method={sale.paymentMethod} />
+                                        </td>
+                                        <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
+                                          <span style={{ color: '#0f172a', fontSize: '13px', fontWeight: 500 }}>
+                                            {formatCurrency(sale.totalAmount)}
+                                          </span>
+                                        </td>
+                                        <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
+                                            <StatusBadge status={sale.status} />
+                                        </td>
+                                        <td style={{ padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
+                                          <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                                            {formatDate(sale.createdAt)}
+                                          </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
 

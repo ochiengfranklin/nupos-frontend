@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { reportApi } from '../../api/report.api'
 import { formatCurrency, formatDateShort } from '../../utils/helpers'
 import Spinner from '../../components/ui/Spinner'
+import { useScreenSize } from '../../utils/responsive'
 
 //  Stat card
 function StatCard({
@@ -120,113 +121,125 @@ function PaymentBreakdown({ data }: { data: { method: string; total: number; cou
 
 // Top products table
 function TopProductsTable({ data }: { data: any[] }) {
+    const { isSmall } = useScreenSize()
+
     if (!data || data.length === 0) {
         return <p style={{ color: '#94a3b8', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>No sales data</p>
     }
 
     return (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-            <tr style={{ background: '#f8fafc' }}>
-                {['#', 'Product', 'SKU', 'Qty sold', 'Revenue'].map(h => (
-                    <th key={h} style={{
-                        textAlign: 'left', padding: '10px 14px',
-                        color: '#94a3b8', fontSize: '12px', fontWeight: 500,
-                        borderBottom: '1px solid #e2e8f0',
-                    }}>
-                        {h}
-                    </th>
-                ))}
-            </tr>
-            </thead>
-            <tbody>
-            {data.map((p, i) => (
-                <tr key={p.productId}>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-              <span style={{
-                  width: '24px', height: '24px', borderRadius: '50%',
-                  background: i < 3 ? '#fef9c3' : '#f1f5f9',
-                  color: i < 3 ? '#854d0e' : '#64748b',
-                  fontSize: '12px', fontWeight: 600,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {i + 1}
-              </span>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>{p.productName}</span>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '12px', fontFamily: 'DM Mono, monospace' }}>{p.sku || '—'}</span>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>{p.totalQuantity}</span>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: 600 }}>{formatCurrency(p.totalRevenue)}</span>
-                    </td>
+        <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isSmall ? '100%' : '500px' }}>
+                <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                    {(['#', 'Product', !isSmall && 'SKU', 'Qty sold', 'Revenue'].filter(Boolean) as string[]).map(h => (
+                        <th key={h} style={{
+                            textAlign: 'left', padding: '10px 14px',
+                            color: '#94a3b8', fontSize: '12px', fontWeight: 500,
+                            borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap',
+                        }}>
+                            {h}
+                        </th>
+                    ))}
                 </tr>
-            ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                {data.map((p, i) => (
+                    <tr key={p.productId}>
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                  <span style={{
+                      width: '24px', height: '24px', borderRadius: '50%',
+                      background: i < 3 ? '#fef9c3' : '#f1f5f9',
+                      color: i < 3 ? '#854d0e' : '#64748b',
+                      fontSize: '12px', fontWeight: 600,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {i + 1}
+                  </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                            <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>{p.productName}</span>
+                        </td>
+                        {!isSmall && (
+                            <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                                <span style={{ color: '#94a3b8', fontSize: '12px', fontFamily: 'DM Mono, monospace' }}>{p.sku || '—'}</span>
+                            </td>
+                        )}
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                            <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>{p.totalQuantity}</span>
+                        </td>
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                            <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: 600 }}>{formatCurrency(p.totalRevenue)}</span>
+                        </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
     )
 }
 
 // Cashier performance table
 function CashierTable({ data }: { data: any[] }) {
+    const { isSmall } = useScreenSize()
+
     if (!data || data.length === 0) {
         return <p style={{ color: '#94a3b8', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>No cashier data</p>
     }
 
     return (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-            <tr style={{ background: '#f8fafc' }}>
-                {['Cashier', 'Sales', 'Revenue', 'Avg sale'].map(h => (
-                    <th key={h} style={{
-                        textAlign: 'left', padding: '10px 14px',
-                        color: '#94a3b8', fontSize: '12px', fontWeight: 500,
-                        borderBottom: '1px solid #e2e8f0',
-                    }}>
-                        {h}
-                    </th>
-                ))}
-            </tr>
-            </thead>
-            <tbody>
-            {data.map((c, i) => (
-                <tr key={c.cashierId}>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                                width: '30px', height: '30px', borderRadius: '50%',
-                                background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                  <span style={{ color: '#2563eb', fontSize: '12px', fontWeight: 600 }}>
-                    {c.cashierName?.charAt(0).toUpperCase()}
-                  </span>
-                            </div>
-                            <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>
-                  {c.cashierName || 'Unknown'}
-                                {i === 0 && (
-                                    <span style={{ marginLeft: '6px', fontSize: '11px' }}>🏆</span>
-                                )}
-                </span>
-                        </div>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>{c.totalSales}</span>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: 600 }}>{formatCurrency(c.totalRevenue)}</span>
-                    </td>
-                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                        <span style={{ color: '#64748b', fontSize: '13px' }}>{formatCurrency(c.averageSale)}</span>
-                    </td>
+        <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isSmall ? '100%' : '500px' }}>
+                <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                    {(['Cashier', 'Sales', 'Revenue', !isSmall && 'Avg sale'].filter(Boolean) as string[]).map(h => (
+                        <th key={h} style={{
+                            textAlign: 'left', padding: '10px 14px',
+                            color: '#94a3b8', fontSize: '12px', fontWeight: 500,
+                            borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap',
+                        }}>
+                            {h}
+                        </th>
+                    ))}
                 </tr>
-            ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                {data.map((c, i) => (
+                    <tr key={c.cashierId}>
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{
+                                    width: '30px', height: '30px', borderRadius: '50%',
+                                    background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                      <span style={{ color: '#2563eb', fontSize: '12px', fontWeight: 600 }}>
+                        {c.cashierName?.charAt(0).toUpperCase()}
+                      </span>
+                                </div>
+                                <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>
+                      {c.cashierName || 'Unknown'}
+                                    {i === 0 && (
+                                        <span style={{ marginLeft: '6px', fontSize: '11px' }}>🏆</span>
+                                    )}
+                    </span>
+                            </div>
+                        </td>
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                            <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500 }}>{c.totalSales}</span>
+                        </td>
+                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                            <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: 600 }}>{formatCurrency(c.totalRevenue)}</span>
+                        </td>
+                        {!isSmall && (
+                            <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                                <span style={{ color: '#64748b', fontSize: '13px' }}>{formatCurrency(c.averageSale)}</span>
+                            </td>
+                        )}
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
     )
 }
 
@@ -235,7 +248,7 @@ function InventorySummary({ data }: { data: any }) {
     if (!data) return null
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
             {[
                 { label: 'Total products',   value: data.summary?.totalProducts,   color: '#2563eb' },
                 { label: 'Stock value',      value: formatCurrency(data.summary?.totalStockValue || 0),   color: '#64748b' },
@@ -256,8 +269,9 @@ function InventorySummary({ data }: { data: any }) {
 
 //  Main reports page
 export default function ReportsPage() {
-    const today     = new Date().toISOString().slice(0, 10)
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+    const { isSmall } = useScreenSize()
+    const today       = new Date().toISOString().slice(0, 10)
+    const monthStart  = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
 
     const [startDate, setStartDate] = useState(monthStart)
     const [endDate,   setEndDate]   = useState(today)
@@ -302,6 +316,7 @@ export default function ReportsPage() {
           font-size: 13px; font-weight: 500; cursor: pointer;
           font-family: 'DM Sans', sans-serif; transition: all 0.15s;
           background: transparent; color: #64748b;
+          white-space: nowrap;
         }
         .tab-btn:hover  { background: #f1f5f9; color: #0f172a; }
         .tab-btn.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -315,7 +330,15 @@ export default function ReportsPage() {
       `}</style>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{
+                display: 'flex',
+                alignItems: isSmall ? 'flex-start' : 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '12px',
+                flexDirection: isSmall ? 'column' : 'row',
+            }}>
                 <div>
                     <h2 style={{ color: '#0f172a', fontSize: '22px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
                         Reports
@@ -336,38 +359,45 @@ export default function ReportsPage() {
                         <input type="date" className="date-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
                     </div>
                     {/* Quick date presets */}
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                        {[
-                            { label: 'Today',     start: today,      end: today },
-                            { label: 'This month', start: monthStart, end: today },
-                            {
-                                label: 'Last 7 days',
-                                start: new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10),
-                                end:   today,
-                            },
-                        ].map(p => (
-                            <button
-                                key={p.label}
-                                onClick={() => { setStartDate(p.start); setEndDate(p.end) }}
-                                style={{
-                                    padding: '7px 10px', borderRadius: '8px',
-                                    border: '1px solid #e2e8f0', background: startDate === p.start && endDate === p.end ? '#eff6ff' : '#fff',
-                                    color: startDate === p.start && endDate === p.end ? '#2563eb' : '#64748b',
-                                    fontSize: '12px', cursor: 'pointer',
-                                    fontFamily: "'DM Sans', sans-serif",
-                                    fontWeight: startDate === p.start && endDate === p.end ? 500 : 400,
-                                }}
-                            >
-                                {p.label}
-                            </button>
-                        ))}
-                    </div>
+                    {!isSmall && (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            {[
+                                { label: 'Today',     start: today,      end: today },
+                                { label: 'This month', start: monthStart, end: today },
+                                {
+                                    label: 'Last 7 days',
+                                    start: new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10),
+                                    end:   today,
+                                },
+                            ].map(p => (
+                                <button
+                                    key={p.label}
+                                    onClick={() => { setStartDate(p.start); setEndDate(p.end) }}
+                                    style={{
+                                        padding: '7px 10px', borderRadius: '8px',
+                                        border: '1px solid #e2e8f0', background: startDate === p.start && endDate === p.end ? '#eff6ff' : '#fff',
+                                        color: startDate === p.start && endDate === p.end ? '#2563eb' : '#64748b',
+                                        fontSize: '12px', cursor: 'pointer',
+                                        fontFamily: "'DM Sans', sans-serif",
+                                        fontWeight: startDate === p.start && endDate === p.end ? 500 : 400,
+                                    }}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Summary cards — always visible */}
             {salesData && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '16px',
+                    marginBottom: '24px'
+                }}>
                     <StatCard
                         label="Total revenue"
                         value={formatCurrency(salesData.summary?.totalRevenue || 0)}
@@ -394,7 +424,16 @@ export default function ReportsPage() {
             )}
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '10px', padding: '4px', marginBottom: '20px', width: 'fit-content' }}>
+            <div style={{
+                display: 'flex',
+                gap: '4px',
+                background: '#f1f5f9',
+                borderRadius: '10px',
+                padding: '4px',
+                marginBottom: '20px',
+                width: isSmall ? '100%' : 'fit-content',
+                overflowX: 'auto',
+            }}>
                 {tabs.map(tab => (
                     <button
                         key={tab.key}
@@ -495,49 +534,55 @@ export default function ReportsPage() {
                                 {inventoryData?.recentMovements?.length > 0 && (
                                     <>
                                         <SectionHeader title="Recent stock movements" sub="Last 20 inventory changes" />
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <thead>
-                                            <tr style={{ background: '#f8fafc' }}>
-                                                {['Product', 'Type', 'Qty', 'Before', 'After', 'Reason'].map(h => (
-                                                    <th key={h} style={{ textAlign: 'left', padding: '10px 14px', color: '#94a3b8', fontSize: '12px', fontWeight: 500, borderBottom: '1px solid #e2e8f0' }}>
-                                                        {h}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            {inventoryData.recentMovements.map((m: any) => (
-                                                <tr key={m.id}>
-                                                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#0f172a', fontWeight: 500 }}>
-                                                        {m.product?.name || '—'}
-                                                    </td>
-                                                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
-                              <span style={{
-                                  background: m.type === 'SALE' ? '#fef2f2' : m.type === 'RESTOCK' ? '#f0fdf4' : '#f1f5f9',
-                                  color:      m.type === 'SALE' ? '#dc2626' : m.type === 'RESTOCK' ? '#16a34a' : '#64748b',
-                                  fontSize: '11px', fontWeight: 500, padding: '2px 8px', borderRadius: '20px',
-                              }}>
-                                {m.type}
-                              </span>
-                                                    </td>
-                                                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', fontWeight: 600 }}>
-                              <span style={{ color: m.quantity < 0 ? '#dc2626' : '#16a34a' }}>
-                                {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
-                              </span>
-                                                    </td>
-                                                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#64748b' }}>
-                                                        {m.stockBefore}
-                                                    </td>
-                                                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#64748b' }}>
-                                                        {m.stockAfter}
-                                                    </td>
-                                                    <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#94a3b8' }}>
-                                                        {m.reason || '—'}
-                                                    </td>
+                                        <div style={{ overflowX: 'auto' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isSmall ? '100%' : '600px' }}>
+                                                <thead>
+                                                <tr style={{ background: '#f8fafc' }}>
+                                                    {(['Product', 'Type', 'Qty', !isSmall && 'Before', !isSmall && 'After', 'Reason'].filter(Boolean) as string[]).map(h => (
+                                                        <th key={h} style={{ textAlign: 'left', padding: '10px 14px', color: '#94a3b8', fontSize: '12px', fontWeight: 500, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+                                                            {h}
+                                                        </th>
+                                                    ))}
                                                 </tr>
-                                            ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                {inventoryData.recentMovements.map((m: any) => (
+                                                    <tr key={m.id}>
+                                                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#0f172a', fontWeight: 500 }}>
+                                                            {m.product?.name || '—'}
+                                                        </td>
+                                                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc' }}>
+                                  <span style={{
+                                      background: m.type === 'SALE' ? '#fef2f2' : m.type === 'RESTOCK' ? '#f0fdf4' : '#f1f5f9',
+                                      color:      m.type === 'SALE' ? '#dc2626' : m.type === 'RESTOCK' ? '#16a34a' : '#64748b',
+                                      fontSize: '11px', fontWeight: 500, padding: '2px 8px', borderRadius: '20px',
+                                  }}>
+                                    {m.type}
+                                  </span>
+                                                        </td>
+                                                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', fontWeight: 600 }}>
+                                  <span style={{ color: m.quantity < 0 ? '#dc2626' : '#16a34a' }}>
+                                    {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                                  </span>
+                                                        </td>
+                                                        {!isSmall && (
+                                                            <>
+                                                                <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#64748b' }}>
+                                                                    {m.stockBefore}
+                                                                </td>
+                                                                <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#64748b' }}>
+                                                                    {m.stockAfter}
+                                                                </td>
+                                                            </>
+                                                        )}
+                                                        <td style={{ padding: '12px 14px', borderBottom: '1px solid #f8fafc', fontSize: '13px', color: '#94a3b8' }}>
+                                                            {m.reason || '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </>
                                 )}
                             </>

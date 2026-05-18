@@ -14,6 +14,7 @@ import BarcodeScanner from '../../components/BarcodeScanner'
 import { useOfflineStore, type OfflineSale } from '../../store/offline.store'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { v4 as uuidv4 } from 'uuid'
+import { useScreenSize } from '../../utils/responsive'
 
 //  Payment method button
 function PaymentBtn({
@@ -453,6 +454,7 @@ function AddCustomerModal({
 // Main cashier page
 export default function NewSalePage() {
     const { shop } = useAuthStore()
+    const { width, isSmall } = useScreenSize()
     const {
         items, addItem, updateQuantity, clearCart,
         getTotal, setCustomer, customerId,
@@ -676,10 +678,12 @@ export default function NewSalePage() {
     return (
         <div style={{
             display: 'flex',
-            height: 'calc(100vh - 64px)',
+            flexDirection: isSmall ? 'column' : 'row',
+            height: isSmall ? 'auto' : 'calc(100vh - 64px)',
+            minHeight: isSmall ? '100vh' : 'auto',
             margin: '-32px',
             fontFamily: "'DM Sans', sans-serif",
-            position: 'relative', // Added to contain the absolute banner if needed, though often it's ok at the page wrapper level
+            position: 'relative',
         }}>
             {/* Offline banner */}
             {!isOnline && (
@@ -732,9 +736,15 @@ export default function NewSalePage() {
 
             {/* ── LEFT — Product grid ── */}
             <div style={{
-                flex: 1, display: 'flex', flexDirection: 'column',
-                background: '#f8fafc', borderRight: '1px solid #e2e8f0',
+                flex: isSmall ? 'none' : 1,
+                height: isSmall ? 'auto' : '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#f8fafc',
+                borderRight: isSmall ? 'none' : '1px solid #e2e8f0',
+                borderBottom: isSmall ? '1px solid #e2e8f0' : 'none',
                 overflow: 'hidden',
+                maxHeight: isSmall ? '60vh' : 'none',
             }}>
 
                 {/* Search / barcode input */}
@@ -852,7 +862,11 @@ export default function NewSalePage() {
                     ) : (
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                            gridTemplateColumns: width < 480
+                                ? 'repeat(2, 1fr)'
+                                : width < 768
+                                    ? 'repeat(3, 1fr)'
+                                    : 'repeat(auto-fill, minmax(150px, 1fr))',
                             gap: '10px',
                         }}>
                             {products.map(p => {
@@ -902,9 +916,13 @@ export default function NewSalePage() {
 
             {/* ── RIGHT — Cart ── */}
             <div style={{
-                width: '380px', minWidth: '380px',
-                display: 'flex', flexDirection: 'column',
-                background: '#fff', overflow: 'hidden',
+                width: isSmall ? '100%' : '380px',
+                minWidth: isSmall ? 'auto' : '380px',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#fff',
+                overflow: 'hidden',
+                maxHeight: isSmall ? '40vh' : 'none',
             }}>
 
                 {/* Cart header */}

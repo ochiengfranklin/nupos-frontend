@@ -8,6 +8,7 @@ import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
 import EmptyState from '../../components/ui/EmptyState'
 import { formatWhatsAppReceipt, openWhatsAppReceipt } from '../../utils/receipt'
+import { useScreenSize } from '../../utils/responsive'
 
 //   Payment badge
 function PaymentBadge({ method }: { method: string }) {
@@ -265,6 +266,7 @@ export default function SalesPage() {
     const queryClient = useQueryClient()
     const { hasRole } = useAuthStore()
     const canVoid     = hasRole(['MANAGER'])
+    const { isSmall } = useScreenSize()
 
     const [page,          setPage]          = useState(1)
     const [startDate,     setStartDate]     = useState('')
@@ -314,11 +316,10 @@ export default function SalesPage() {
         .sales-row { cursor: pointer; transition: background 0.1s; }
         .sales-row:hover td { background: #f8fafc; }
         .filter-select {
-          padding: 8px 12px; border-radius: '8px';
+          padding: 8px 12px; border-radius: 8px;
           border: 1px solid #e2e8f0; background: #fff;
           font-size: 13px; color: #64748b; cursor: pointer;
           font-family: 'DM Sans', sans-serif; outline: none;
-          border-radius: 8px;
         }
         .date-input {
           padding: 8px 12px; border-radius: 8px;
@@ -407,7 +408,7 @@ export default function SalesPage() {
             </div>
 
             {/* Table */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', overflowX: 'auto' }}>
                 {isLoading ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px', gap: '12px' }}>
                         <Spinner size={24} />
@@ -420,10 +421,10 @@ export default function SalesPage() {
                     />
                 ) : (
                     <>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isSmall ? '100%' : '600px' }}>
                             <thead>
                             <tr style={{ background: '#f8fafc' }}>
-                                {['Receipt', 'Date', 'Items', 'Payment', 'Discount', 'Total', 'Status', ''].map(h => (
+                                {(['Receipt', !isSmall && 'Date', !isSmall && 'Items', 'Payment', !isSmall && 'Discount', 'Total', 'Status', ''].filter(Boolean) as string[]).map(h => (
                                     <th key={h} style={{
                                         textAlign: 'left', padding: '12px 16px',
                                         color: '#94a3b8', fontSize: '12px', fontWeight: 500,
@@ -446,24 +447,30 @@ export default function SalesPage() {
                         {sale.receiptNumber}
                       </span>
                                     </td>
-                                    <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: '#64748b', fontSize: '13px' }}>
-                        {formatDate(sale.createdAt)}
-                      </span>
-                                    </td>
-                                    <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: '#64748b', fontSize: '13px' }}>
-                        —
-                      </span>
-                                    </td>
+                                    {!isSmall && (
+                                        <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
+                        <span style={{ color: '#64748b', fontSize: '13px' }}>
+                          {formatDate(sale.createdAt)}
+                        </span>
+                                        </td>
+                                    )}
+                                    {!isSmall && (
+                                        <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
+                        <span style={{ color: '#64748b', fontSize: '13px' }}>
+                          —
+                        </span>
+                                        </td>
+                                    )}
                                     <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
                                         <PaymentBadge method={sale.paymentMethod} />
                                     </td>
-                                    <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
-                      <span style={{ color: parseFloat(sale.discountAmount) > 0 ? '#dc2626' : '#94a3b8', fontSize: '13px' }}>
-                        {parseFloat(sale.discountAmount) > 0 ? `-${formatCurrency(sale.discountAmount)}` : '—'}
-                      </span>
-                                    </td>
+                                    {!isSmall && (
+                                        <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
+                        <span style={{ color: parseFloat(sale.discountAmount) > 0 ? '#dc2626' : '#94a3b8', fontSize: '13px' }}>
+                          {parseFloat(sale.discountAmount) > 0 ? `-${formatCurrency(sale.discountAmount)}` : '—'}
+                        </span>
+                                        </td>
+                                    )}
                                     <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
                       <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
                         {formatCurrency(sale.totalAmount)}

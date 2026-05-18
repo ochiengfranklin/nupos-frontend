@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { authApi } from '../../api/auth.api'
 import { useAuthStore } from '../../store/auth.store'
 import { getErrorMessage } from '../../utils/helpers'
+import { useScreenSize } from '../../utils/responsive'
 
 export default function LoginPage() {
     const navigate = useNavigate()
     const setAuth  = useAuthStore((state) => state.setAuth)
+    const { isSmall } = useScreenSize()
 
     const [form, setForm] = useState({
         shopSlug: '',
@@ -148,7 +150,7 @@ export default function LoginPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '40px 24px',
+                    padding: isSmall ? '24px 16px' : '40px 24px',
                 }}>
                     <div style={{ width: '100%', maxWidth: '440px' }}>
 

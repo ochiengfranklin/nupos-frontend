@@ -8,8 +8,9 @@ import Modal from '../../components/ui/Modal'
 import EmptyState from '../../components/ui/EmptyState'
 import Spinner from '../../components/ui/Spinner'
 import { toast } from '../../components/ui/Toast'
+import { useScreenSize } from '../../utils/responsive'
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// Types
 interface ProductFormData {
     name:              string
     sku:               string
@@ -34,7 +35,7 @@ const emptyForm: ProductFormData = {
     description:       '',
 }
 
-// ── Stock badge ────────────────────────────────────────────────────────────
+// Stock badge
 function StockBadge({ qty, threshold }: { qty: number; threshold: number }) {
     if (qty === 0) return (
         <span style={{ background: '#fef2f2', color: '#dc2626', fontSize: '11px', fontWeight: 500, padding: '2px 8px', borderRadius: '20px' }}>
@@ -53,7 +54,7 @@ function StockBadge({ qty, threshold }: { qty: number; threshold: number }) {
     )
 }
 
-// ── Form field ─────────────────────────────────────────────────────────────
+// Form field
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div style={{ marginBottom: '16px' }}>
@@ -77,7 +78,7 @@ const inputStyle: React.CSSProperties = {
     background: '#fff',
 }
 
-// ── Product form ───────────────────────────────────────────────────────────
+//  Product form
 function ProductForm({
                          form, categories, onChange, onSubmit, onClose, loading, isEdit,
                      }: {
@@ -216,10 +217,11 @@ function ProductForm({
     )
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
+//  Main page
 export default function ProductsPage() {
     const queryClient  = useQueryClient()
     const { hasRole }  = useAuthStore()
+    const { isSmall }  = useScreenSize()
     const canEdit      = hasRole(['MANAGER'])
 
     const [search,         setSearch]         = useState('')
@@ -231,7 +233,7 @@ export default function ProductsPage() {
     const [form,           setForm]           = useState<ProductFormData>(emptyForm)
     const [formError,      setFormError]      = useState('')
 
-    // ── Queries ──────────────────────────────────────────────────────────────
+    // Queries
     const { data, isLoading } = useQuery({
         queryKey: ['products', page, search, categoryFilter, lowStockOnly],
         queryFn: () =>
@@ -253,7 +255,7 @@ export default function ProductsPage() {
     const products:   Product[]  = data?.data || []
     const meta                   = data?.meta
 
-    // ── Mutations ─────────────────────────────────────────────────────────────
+    //   Mutations
     const createMutation = useMutation({
         mutationFn: (f: ProductFormData) =>
             productApi.create({
@@ -316,7 +318,7 @@ export default function ProductsPage() {
         onError: () => toast.error('Failed to delete product'),
     })
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
+    //   Handlers
     const openCreate = () => {
         setForm(emptyForm)
         setFormError('')
@@ -345,7 +347,7 @@ export default function ProductsPage() {
         }
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    //   Render
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: '1200px' }}>
             <style>{`
@@ -370,7 +372,8 @@ export default function ProductsPage() {
         .search-input {
           padding: 9px 12px 9px 36px;
           border: 1px solid #e2e8f0; border-radius: 8px;
-          font-size: 14px; outline: none; width: 260px;
+          font-size: 14px; outline: none; 
+          width: ${isSmall ? '100%' : '260px'};
           font-family: 'DM Sans', sans-serif; color: #0f172a;
           background: #fff;
         }
@@ -379,7 +382,14 @@ export default function ProductsPage() {
       `}</style>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{
+                display: 'flex',
+                flexDirection: isSmall ? 'column' : 'row',
+                alignItems: isSmall ? 'flex-start' : 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px',
+                gap: '12px',
+            }}>
                 <div>
                     <h2 style={{ color: '#0f172a', fontSize: '22px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
                         Products
@@ -407,8 +417,14 @@ export default function ProductsPage() {
             </div>
 
             {/* Filters */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <div style={{ position: 'relative' }}>
+            <div style={{
+                display: 'flex',
+                gap: '10px',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+            }}>
+                <div style={{ position: 'relative', width: isSmall ? '100%' : 'auto' }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
                         <circle cx="11" cy="11" r="8"/>
@@ -428,6 +444,7 @@ export default function ProductsPage() {
                         border: '1px solid #e2e8f0', background: '#fff',
                         fontSize: '13px', color: '#64748b', cursor: 'pointer',
                         fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                        flex: isSmall ? 1 : 'none',
                     }}
                     value={categoryFilter}
                     onChange={e => { setCategoryFilter(e.target.value); setPage(1) }}
@@ -440,13 +457,20 @@ export default function ProductsPage() {
                 <button
                     className={`filter-btn${lowStockOnly ? ' active' : ''}`}
                     onClick={() => { setLowStockOnly(!lowStockOnly); setPage(1) }}
+                    style={{ flex: isSmall ? 1 : 'none' }}
                 >
                     ⚠️ Low stock only
                 </button>
             </div>
 
             {/* Table */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                overflowX: 'auto',
+            }}>
                 {isLoading ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px', gap: '12px' }}>
                         <Spinner size={24} />
@@ -461,7 +485,7 @@ export default function ProductsPage() {
                     />
                 ) : (
                     <>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                             <thead>
                             <tr style={{ background: '#f8fafc' }}>
                                 {['Product', 'SKU', 'Category', 'Price', 'Cost', 'Stock', ''].map(h => (
@@ -495,7 +519,7 @@ export default function ProductsPage() {
                                     </td>
                                     <td style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc' }}>
                                         {p.category ? (
-                                            <span style={{ background: '#f1f5f9', color: '#64748b', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>
+                                            <span style={{ background: '#f1f5f9', color: '#64748b', fontSize: '12px', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
                           {p.category.name}
                         </span>
                                         ) : (

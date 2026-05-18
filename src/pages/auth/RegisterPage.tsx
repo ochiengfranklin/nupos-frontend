@@ -77,6 +77,25 @@ export default function RegisterPage() {
         .reg-btn:hover:not(:disabled) { background: #005c43; }
         .reg-btn:disabled { opacity: 0.65; cursor: not-allowed; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .mockup-wrap { display: none !important; }
+        }
+        @media (max-width: 768px) {
+          .features-grid { grid-template-columns: 1fr 1fr !important; }
+          .pricing-grid  { grid-template-columns: 1fr !important; }
+          .footer-grid   { grid-template-columns: 1fr 1fr !important; }
+          .steps-grid    { grid-template-columns: 1fr !important; }
+          .hero-title    { font-size: 36px !important; }
+          .nav-links     { display: none !important; }
+          .reviews-grid  { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .features-grid { grid-template-columns: 1fr !important; }
+          .footer-grid   { grid-template-columns: 1fr !important; }
+          .hero-title    { font-size: 28px !important; }
+        }
       `}</style>
 
             {/* Navbar */}

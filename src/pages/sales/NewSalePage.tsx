@@ -15,6 +15,7 @@ import { useOfflineStore, type OfflineSale } from '../../store/offline.store'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { v4 as uuidv4 } from 'uuid'
 import { useScreenSize } from '../../utils/responsive'
+import { loyaltyApi } from '../../api/loyalty.api'
 
 //  Payment method button
 function PaymentBtn({
@@ -473,6 +474,12 @@ export default function NewSalePage() {
     const [completedSale,    setCompletedSale]    = useState<any>(null)
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
+    const [loyaltyPoints,    setLoyaltyPoints]    = useState(0)
+    const [redeemingPoints,  setRedeemingPoints]  = useState(false)
+    const [pointsToRedeem,   setPointsToRedeem]   = useState('')
+    const [pointsDiscount,   setPointsDiscount]   = useState(0)
+    const [loyaltySettings,  setLoyaltySettings]  = useState<any>(null)
+
     const [barcodeBuffer, setBarcodeBuffer] = useState('')
     const [barcodeError, setBarcodeError]   = useState('')
     const barcodeTimeout                    = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -482,6 +489,10 @@ export default function NewSalePage() {
 
     useEffect(() => {
         searchRef.current?.focus()
+    }, [])
+
+    useEffect(() => {
+        loyaltyApi.getSettings().then(r => setLoyaltySettings(r.data.data)).catch(() => {})
     }, [])
 
     //  Queries
@@ -514,7 +525,7 @@ export default function NewSalePage() {
 
     const total      = getTotal()
     const discount_  = parseFloat(discount || '0')
-    const finalTotal = Math.max(0, total - discount_)
+    const finalTotal = Math.max(0, total - discount_ - pointsDiscount)
 
     // USB barcode scanners type very fast — faster than a human
     // We detect this by measuring time between keystrokes
@@ -592,7 +603,7 @@ export default function NewSalePage() {
                 price:     i.product.price,
             })),
             paymentMethod,
-            discountAmount: discount_,
+            discountAmount: discount_ + pointsDiscount,
             notes,
             customerId:     customerId || undefined,
             totalAmount:    finalTotal,
@@ -606,7 +617,7 @@ export default function NewSalePage() {
         setCompletedSale({
             receiptNumber:  `OFFLINE-${Date.now()}`,
             subtotal:       String(total),
-            discountAmount: String(discount_),
+            discountAmount: String(discount_ + pointsDiscount),
             totalAmount:    String(finalTotal),
             paymentMethod,
             items:          items.map(i => ({
@@ -625,6 +636,10 @@ export default function NewSalePage() {
         setSelectedCustomer(null)
         setCustomer(null)
         setPaymentMethod('CASH')
+        setLoyaltyPoints(0)
+        setPointsToRedeem('')
+        setPointsDiscount(0)
+        setRedeemingPoints(false)
 
         toast.success('Sale saved offline — will sync when internet returns')
     }
@@ -636,9 +651,10 @@ export default function NewSalePage() {
                 items:             items.map(i => ({ productId: i.product.id, quantity: i.quantity })),
                 paymentMethod,
                 customerId:        customerId  || undefined,
-                discountAmount:    discount_   || undefined,
+                discountAmount:    (discount_ + pointsDiscount) || undefined,
                 notes:             notes       || undefined,
                 paymentReference:  ref         || undefined,
+                loyaltyPointsUsed: pointsToRedeem ? parseInt(pointsToRedeem) : undefined,
             }),
         onSuccess: (res) => {
             console.log('Sale response:', JSON.stringify(res.data))
@@ -655,6 +671,10 @@ export default function NewSalePage() {
             setCustomer(null)
             setPaymentMethod('CASH')
             setShowMpesa(false)
+            setLoyaltyPoints(0)
+            setPointsToRedeem('')
+            setPointsDiscount(0)
+            setRedeemingPoints(false)
             toast.success('Sale completed!')
         },
         onError: (e: any) => {
@@ -663,10 +683,23 @@ export default function NewSalePage() {
         },
     })
 
-    const handleSelectCustomer = (c: Customer | null) => {
+    const handleSelectCustomer = async (c: Customer | null) => {
         setSelectedCustomer(c)
         setCustomer(c?.id || null)
         setShowCustomer(false)
+        setPointsToRedeem('')
+        setPointsDiscount(0)
+
+        if (c) {
+            try {
+                const res = await loyaltyApi.getCustomerHistory(c.id)
+                setLoyaltyPoints(res.data.data?.customer?.loyaltyPoints || 0)
+            } catch {
+                setLoyaltyPoints(0)
+            }
+        } else {
+            setLoyaltyPoints(0)
+        }
     }
 
     const handleNewSale = () => {
@@ -1069,6 +1102,81 @@ export default function NewSalePage() {
                             </div>
                         </div>
 
+                        {/* Loyalty points */}
+                        {selectedCustomer && loyaltySettings?.isEnabled && loyaltyPoints > 0 && (
+                            <div style={{ marginBottom: '10px' }}>
+                                <div style={{
+                                    background: '#fdf4ff', border: '1px solid #e9d5ff',
+                                    borderRadius: '8px', padding: '10px 12px',
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span style={{ fontSize: '14px' }}>⭐</span>
+                                            <span style={{ color: '#7c3aed', fontSize: '13px', fontWeight: 500 }}>
+                                    {loyaltyPoints} points available
+                                  </span>
+                                        </div>
+                                        {!redeemingPoints ? (
+                                            <button
+                                                onClick={() => setRedeemingPoints(true)}
+                                                style={{
+                                                    background: '#7c3aed', color: '#fff',
+                                                    border: 'none', borderRadius: '6px',
+                                                    padding: '4px 10px', fontSize: '11px',
+                                                    fontWeight: 500, cursor: 'pointer',
+                                                    fontFamily: "'DM Sans', sans-serif",
+                                                }}
+                                            >
+                                                Redeem
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => {
+                                                    setRedeemingPoints(false)
+                                                    setPointsToRedeem('')
+                                                    setPointsDiscount(0)
+                                                }}
+                                                style={{
+                                                    background: 'none', border: 'none',
+                                                    color: '#94a3b8', fontSize: '12px',
+                                                    cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                                                }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {redeemingPoints && (
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <input
+                                                type="number"
+                                                min={loyaltySettings?.minimumRedemption || 100}
+                                                max={loyaltyPoints}
+                                                value={pointsToRedeem}
+                                                onChange={e => {
+                                                    const pts = parseInt(e.target.value || '0')
+                                                    setPointsToRedeem(e.target.value)
+                                                    const discount = pts * (loyaltySettings?.pointsRedemptionRate || 1)
+                                                    setPointsDiscount(discount)
+                                                }}
+                                                placeholder={`Min ${loyaltySettings?.minimumRedemption || 100} pts`}
+                                                style={{
+                                                    flex: 1, padding: '6px 10px',
+                                                    border: '1px solid #e9d5ff', borderRadius: '6px',
+                                                    fontSize: '13px', outline: 'none',
+                                                    fontFamily: "'DM Sans', sans-serif",
+                                                }}
+                                            />
+                                            <span style={{ color: '#7c3aed', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                                    = KES {pointsDiscount}
+                                  </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Notes */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                             <label style={{ color: '#64748b', fontSize: '13px', minWidth: '70px' }}>Notes</label>
@@ -1096,6 +1204,12 @@ export default function NewSalePage() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                     <span style={{ color: '#64748b', fontSize: '13px' }}>Discount</span>
                                     <span style={{ color: '#dc2626', fontSize: '13px' }}>-{formatCurrency(discount_)}</span>
+                                </div>
+                            )}
+                            {pointsDiscount > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                    <span style={{ color: '#64748b', fontSize: '13px' }}>Points redeemed</span>
+                                    <span style={{ color: '#7c3aed', fontSize: '13px' }}>-{formatCurrency(pointsDiscount)}</span>
                                 </div>
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>

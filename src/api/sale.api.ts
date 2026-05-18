@@ -8,6 +8,7 @@ interface CreateSalePayload {
     discountAmount?:   number
     notes?:            string
     paymentReference?: string
+    loyaltyPointsUsed?: number
 }
 
 export const saleApi = {

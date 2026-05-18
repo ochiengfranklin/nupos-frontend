@@ -8,6 +8,7 @@ import { toast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
 import EmptyState from '../../components/ui/EmptyState'
+import { loyaltyApi } from '../../api/loyalty.api'
 
 // Customer form
 interface CustomerFormData {
@@ -125,6 +126,11 @@ function CustomerDetailModal({
 
     const customer = data
 
+    const { data: loyaltyData } = useQuery({
+        queryKey: ['loyalty-history', customerId],
+        queryFn:  () => loyaltyApi.getCustomerHistory(customerId).then(r => r.data.data),
+    })
+
     return (
         <Modal title="Customer profile" onClose={onClose} maxWidth={520}>
             {isLoading ? (
@@ -174,6 +180,62 @@ function CustomerDetailModal({
                             </p>
                         </div>
                     </div>
+
+                    {/* Loyalty points summary */}
+                    {loyaltyData?.customer?.loyaltyPoints > 0 && (
+                        <div style={{
+                            background: '#fdf4ff', border: '1px solid #e9d5ff',
+                            borderRadius: '10px', padding: '14px 16px', marginBottom: '20px',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        }}>
+                            <div>
+                                <p style={{ color: '#7c3aed', fontSize: '12px', margin: '0 0 2px', fontWeight: 500 }}>
+                                    ⭐ Loyalty points
+                                </p>
+                                <p style={{ color: '#0f172a', fontSize: '24px', fontWeight: 700, margin: 0 }}>
+                                    {loyaltyData.customer.loyaltyPoints}
+                                </p>
+                            </div>
+                            <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0, textAlign: 'right' }}>
+                                Worth KES {loyaltyData.customer.loyaltyPoints}<br />
+                                <span style={{ fontSize: '11px' }}>at 1pt = KES 1</span>
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Loyalty transaction history */}
+                    {loyaltyData?.transactions?.length > 0 && (
+                        <div style={{ marginTop: '16px', marginBottom: '20px' }}>
+                            <p style={{ color: '#64748b', fontSize: '12px', fontWeight: 500, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Points history
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                                {loyaltyData.transactions.map((t: any) => (
+                                    <div key={t.id} style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        padding: '8px 12px', background: '#f8fafc', borderRadius: '6px',
+                                    }}>
+                                        <div>
+                                            <p style={{ color: '#0f172a', fontSize: '12px', fontWeight: 500, margin: 0 }}>
+                                                {t.type === 'EARNED'   ? '+ Earned'   :
+                                                    t.type === 'REDEEMED' ? '- Redeemed' :
+                                                        t.type === 'ADJUSTED' ? '± Adjusted' : t.type}
+                                            </p>
+                                            <p style={{ color: '#94a3b8', fontSize: '11px', margin: 0 }}>
+                                                {t.note} · {new Date(t.createdAt).toLocaleDateString('en-KE')}
+                                            </p>
+                                        </div>
+                                        <span style={{
+                                            color: t.points > 0 ? '#16a34a' : '#dc2626',
+                                            fontSize: '13px', fontWeight: 600,
+                                        }}>
+                                            {t.points > 0 ? '+' : ''}{t.points}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Purchase history */}
                     <div>

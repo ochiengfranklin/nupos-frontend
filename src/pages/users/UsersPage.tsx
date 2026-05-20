@@ -4,6 +4,7 @@ import { userApi } from '../../api/user.api'
 import type {User} from '../../types'
 import { formatDate } from '../../utils/helpers'
 import { useAuthStore } from '../../store/auth.store'
+import { useSettingsStore } from '../../store/settings.store'
 import { toast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
@@ -25,7 +26,7 @@ function RoleBadge({ role }: { role: string }) {
     )
 }
 
-//  Avatar
+// Avatar
 function Avatar({ name, role }: { name: string; role: string }) {
     const colors: Record<string, string> = {
         OWNER:       '#9333ea',
@@ -71,7 +72,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     )
 }
 
-//Create user form
+// Create user form
 interface CreateFormData {
     name:     string
     email:    string
@@ -114,7 +115,6 @@ function CreateUserForm({
                 </select>
             </Field>
 
-            {/* Role descriptions */}
             <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', marginBottom: '20px', fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
                 {form.role === 'CASHIER'     && '🛒 Can process sales, view products and customers.'}
                 {form.role === 'MANAGER'     && '📊 Can manage products, customers, users and view reports.'}
@@ -283,6 +283,7 @@ function ChangePasswordForm({
 export default function UsersPage() {
     const queryClient  = useQueryClient()
     const { user: me, hasRole } = useAuthStore()
+    const { paperWidth, setPaperWidth } = useSettingsStore()
     const canManage    = hasRole(['MANAGER'])
 
     const [showCreate,    setShowCreate]    = useState(false)
@@ -300,14 +301,12 @@ export default function UsersPage() {
 
     const users: User[] = data || []
 
-    // Group by role for display
     const owners       = users.filter(u => u.role === 'OWNER')
     const managers     = users.filter(u => u.role === 'MANAGER')
     const cashiers     = users.filter(u => u.role === 'CASHIER')
     const storekeepers = users.filter(u => u.role === 'STOREKEEPER')
     const grouped      = [...owners, ...managers, ...cashiers, ...storekeepers]
 
-    //  Mutations
     const createMutation = useMutation({
         mutationFn: (f: CreateFormData) =>
             userApi.create({ name: f.name, email: f.email, password: f.password, role: f.role }),
@@ -379,7 +378,6 @@ export default function UsersPage() {
         onError: (e: any) => toast.error(e?.response?.data?.message || 'Failed to change password'),
     })
 
-    //  Handlers
     const openEdit = (u: User) => {
         setEditForm({ name: u.name, role: u.role })
         setFormError('')
@@ -398,7 +396,6 @@ export default function UsersPage() {
         }
     }
 
-    // Render
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: '1000px' }}>
             <style>{`
@@ -413,7 +410,6 @@ export default function UsersPage() {
         .action-btn.success:hover { background: #f0fdf4; color: #16a34a; }
       `}</style>
 
-            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <div>
                     <h2 style={{ color: '#0f172a', fontSize: '22px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
@@ -458,7 +454,6 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            {/* Role summary cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
                 {[
                     { role: 'OWNER',       color: '#9333ea', count: owners.length },
@@ -481,7 +476,6 @@ export default function UsersPage() {
                 ))}
             </div>
 
-            {/* Users table */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
                 {isLoading ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px', gap: '12px' }}>
@@ -576,7 +570,42 @@ export default function UsersPage() {
                 )}
             </div>
 
-            {/* Create modal */}
+            <div style={{
+                background: '#fff', border: '1px solid #e2e8f0',
+                borderRadius: '12px', padding: '20px 24px', marginTop: '20px',
+            }}>
+                <h3 style={{ color: '#0f172a', fontSize: '15px', fontWeight: 500, margin: '0 0 4px' }}>
+                    Receipt settings
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 16px' }}>
+                    Choose your thermal printer paper size
+                </p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    {(['58mm', '80mm'] as const).map(size => (
+                        <button
+                            key={size}
+                            onClick={() => setPaperWidth(size)}
+                            style={{
+                                padding: '10px 20px', borderRadius: '8px',
+                                border: `1.5px solid ${paperWidth === size ? '#2563eb' : '#e2e8f0'}`,
+                                background: paperWidth === size ? '#eff6ff' : '#fff',
+                                color: paperWidth === size ? '#2563eb' : '#64748b',
+                                fontSize: '14px', fontWeight: paperWidth === size ? 500 : 400,
+                                cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                            }}
+                        >
+                            {size} paper
+                        </button>
+                    ))}
+                </div>
+                <p style={{ color: '#94a3b8', fontSize: '12px', margin: '8px 0 0' }}>
+                    {paperWidth === '58mm'
+                        ? 'Common for small desktop thermal printers'
+                        : 'Standard for most Kenyan POS printers'
+                    }
+                </p>
+            </div>
+
             {showCreate && (
                 <Modal title="Add team member" onClose={() => setShowCreate(false)}>
                     {formError && (
@@ -594,7 +623,6 @@ export default function UsersPage() {
                 </Modal>
             )}
 
-            {/* Edit modal */}
             {editUser && (
                 <Modal title="Edit user" onClose={() => setEditUser(null)}>
                     {formError && (
@@ -613,7 +641,6 @@ export default function UsersPage() {
                 </Modal>
             )}
 
-            {/* Reset password modal */}
             {resetUser && (
                 <Modal title={`Reset password — ${resetUser.name}`} onClose={() => setResetUser(null)}>
                     <ResetPasswordForm
@@ -624,7 +651,6 @@ export default function UsersPage() {
                 </Modal>
             )}
 
-            {/* Change own password modal */}
             {showChangePwd && (
                 <Modal title="Change my password" onClose={() => setShowChangePwd(false)}>
                     <ChangePasswordForm

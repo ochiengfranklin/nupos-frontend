@@ -5,8 +5,10 @@ import { customerApi } from '../../api/customer.api'
 import { saleApi } from '../../api/sale.api'
 import { useCartStore } from '../../store/cart.store'
 import { useAuthStore } from '../../store/auth.store'
-import type {Product, Category, Customer} from '../../types'
+import { useSettingsStore } from '../../store/settings.store'
+import type { Product, Category, Customer } from '../../types'
 import { formatCurrency, formatWhatsAppReceipt, openWhatsAppReceipt } from '../../utils/helpers'
+import { printReceipt } from '../../utils/thermal'
 import { toast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
@@ -17,7 +19,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { useScreenSize } from '../../utils/responsive'
 import { loyaltyApi } from '../../api/loyalty.api'
 
-//  Payment method button
+// Payment method button
 function PaymentBtn({
                         label, icon, selected, onClick, color = '#2563eb',
                     }: {
@@ -31,17 +33,11 @@ function PaymentBtn({
         <button
             onClick={onClick}
             style={{
-                flex: 1,
-                padding: '12px 8px',
-                borderRadius: '10px',
+                flex: 1, padding: '12px 8px', borderRadius: '10px',
                 border: selected ? `2px solid ${color}` : '2px solid #e2e8f0',
                 background: selected ? `${color}15` : '#fff',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.15s',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: '6px', transition: 'all 0.15s',
             }}
         >
             <span style={{ color: selected ? color : '#94a3b8' }}>{icon}</span>
@@ -52,34 +48,65 @@ function PaymentBtn({
     )
 }
 
-//   Receipt modal
+// Receipt modal
 function ReceiptModal({
-                          sale, onClose, onNewSale, shopName,
+                          sale, onClose, onNewSale, shopName, shopPhone, cashierName,
                       }: {
-    sale:      any
-    onClose:   () => void
-    onNewSale: () => void
-    shopName:  string
+    sale:         any
+    onClose:      () => void
+    onNewSale:    () => void
+    shopName:     string
+    shopPhone?:   string
+    cashierName?: string
 }) {
-    const [phone,      setPhone]      = useState('')
-    const [showPhone,  setShowPhone]  = useState(false)
-    const [sending,    setSending]    = useState(false)
+    const [phone,     setPhone]     = useState('')
+    const [showPhone, setShowPhone] = useState(false)
+    const [sending,   setSending]   = useState(false)
+    const { paperWidth }            = useSettingsStore()
+
+    const handlePrint = () => {
+        printReceipt({
+            receiptNumber:  sale.receiptNumber  || '—',
+            shopName,
+            shopPhone,
+            items: (sale.items || []).map((item: any) => ({
+                name:      item.name || item.product?.name || 'Product',
+                quantity:  item.quantity,
+                unitPrice: item.unitPrice || item.price || 0,
+                subtotal:  item.subtotal  || (
+                    parseFloat(String(item.unitPrice || item.price || 0)) * item.quantity
+                ),
+            })),
+            subtotal:       sale.subtotal       || 0,
+            discountAmount: sale.discountAmount || 0,
+            totalAmount:    sale.totalAmount    || 0,
+            paymentMethod:  sale.paymentMethod  || 'CASH',
+            cashierName,
+            createdAt:      sale.createdAt      || new Date().toISOString(),
+            notes:          sale.notes,
+        }, paperWidth)
+    }
 
     const handleWhatsApp = () => {
         if (!phone.trim()) return
         setSending(true)
-
         const receiptText = formatWhatsAppReceipt({
             receiptNumber:  sale.receiptNumber,
             shopName,
-            items:          sale.items || [],
+            items: (sale.items || []).map((item: any) => ({
+                name:      item.name || item.product?.name || 'Product',
+                quantity:  item.quantity,
+                unitPrice: item.unitPrice || item.price || 0,
+                subtotal:  item.subtotal  || (
+                    parseFloat(String(item.unitPrice || item.price || 0)) * item.quantity
+                ),
+            })),
             subtotal:       sale.subtotal,
             discountAmount: sale.discountAmount,
             totalAmount:    sale.totalAmount,
             paymentMethod:  sale.paymentMethod,
             createdAt:      sale.createdAt,
         })
-
         openWhatsAppReceipt(phone, receiptText)
         setSending(false)
         setShowPhone(false)
@@ -108,31 +135,88 @@ function ReceiptModal({
                 </p>
             </div>
 
-            {/* Receipt summary */}
+            {/* Items preview */}
+            <div style={{ marginBottom: '12px' }}>
+                {(sale.items || []).map((item: any, i: number) => (
+                    <div key={i} style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        padding: '4px 0', fontSize: '13px',
+                        borderBottom: '1px solid #f1f5f9',
+                    }}>
+            <span style={{ color: '#0f172a' }}>
+              {item.name || item.product?.name || 'Product'} × {item.quantity}
+            </span>
+                        <span style={{ color: '#64748b' }}>
+              {formatCurrency(parseFloat(String(item.subtotal || 0)))}
+            </span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Summary */}
             <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Subtotal</span>
-                    <span style={{ color: '#0f172a', fontSize: '13px' }}>KES {parseFloat(sale?.subtotal || '0').toFixed(2)}</span>
+                    <span style={{ color: '#0f172a', fontSize: '13px' }}>
+            KES {parseFloat(sale?.subtotal || '0').toFixed(2)}
+          </span>
                 </div>
                 {parseFloat(sale?.discountAmount || '0') > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span style={{ color: '#64748b', fontSize: '13px' }}>Discount</span>
-                        <span style={{ color: '#dc2626', fontSize: '13px' }}>-KES {parseFloat(sale?.discountAmount || '0').toFixed(2)}</span>
+                        <span style={{ color: '#dc2626', fontSize: '13px' }}>
+              -KES {parseFloat(sale?.discountAmount || '0').toFixed(2)}
+            </span>
                     </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                     <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>Total</span>
-                    <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>KES {parseFloat(sale?.totalAmount || '0').toFixed(2)}</span>
+                    <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>
+            KES {parseFloat(sale?.totalAmount || '0').toFixed(2)}
+          </span>
                 </div>
             </div>
 
-            {/* WhatsApp phone input */}
-            {showPhone ? (
-                <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', color: '#64748b', fontSize: '12px', fontWeight: 500, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Customer phone number
-                    </label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+            {/* Print + WhatsApp */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <button
+                    onClick={handlePrint}
+                    style={{
+                        flex: 1, padding: '10px',
+                        border: '1.5px solid #e2e8f0', borderRadius: '8px',
+                        background: '#fff', color: '#0f172a', fontSize: '13px',
+                        fontWeight: 500, cursor: 'pointer',
+                        fontFamily: "'DM Sans', sans-serif",
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    }}
+                >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6,9 6,2 18,2 18,9"/>
+                        <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                        <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    Print
+                </button>
+
+                {!showPhone ? (
+                    <button
+                        onClick={() => setShowPhone(true)}
+                        style={{
+                            flex: 1, padding: '10px',
+                            border: '1.5px solid #dcfce7', borderRadius: '8px',
+                            background: '#f0fdf4', color: '#16a34a', fontSize: '13px',
+                            fontWeight: 500, cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif",
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        }}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                        WhatsApp
+                    </button>
+                ) : (
+                    <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
                         <input
                             type="tel"
                             value={phone}
@@ -140,10 +224,10 @@ function ReceiptModal({
                             placeholder="07XXXXXXXX"
                             autoFocus
                             style={{
-                                flex: 1, padding: '9px 12px',
+                                flex: 1, padding: '8px 10px',
                                 border: '1px solid #e2e8f0', borderRadius: '8px',
-                                fontSize: '14px', outline: 'none',
-                                fontFamily: "'DM Sans', sans-serif", color: '#0f172a',
+                                fontSize: '13px', outline: 'none',
+                                fontFamily: "'DM Sans', sans-serif",
                             }}
                             onKeyDown={e => e.key === 'Enter' && handleWhatsApp()}
                         />
@@ -151,54 +235,30 @@ function ReceiptModal({
                             onClick={handleWhatsApp}
                             disabled={!phone.trim() || sending}
                             style={{
-                                padding: '9px 16px', borderRadius: '8px',
+                                padding: '8px 12px', borderRadius: '8px',
                                 border: 'none', background: '#16a34a',
-                                color: '#fff', fontSize: '14px', fontWeight: 500,
-                                cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                                color: '#fff', fontSize: '12px', cursor: 'pointer',
+                                fontFamily: "'DM Sans', sans-serif",
                                 opacity: !phone.trim() ? 0.6 : 1,
-                                display: 'flex', alignItems: 'center', gap: '6px',
                             }}
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                            </svg>
                             Send
                         </button>
                         <button
                             onClick={() => { setShowPhone(false); setPhone('') }}
                             style={{
-                                padding: '9px 12px', borderRadius: '8px',
+                                padding: '8px', borderRadius: '8px',
                                 border: '1px solid #e2e8f0', background: '#fff',
-                                color: '#64748b', fontSize: '14px', cursor: 'pointer',
-                                fontFamily: "'DM Sans', sans-serif",
+                                color: '#64748b', cursor: 'pointer',
                             }}
                         >
-                            Cancel
+                            ✕
                         </button>
                     </div>
-                </div>
-            ) : (
-                <button
-                    onClick={() => setShowPhone(true)}
-                    style={{
-                        width: '100%', padding: '10px',
-                        border: '1.5px solid #dcfce7', borderRadius: '8px',
-                        background: '#f0fdf4', color: '#16a34a',
-                        fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-                        fontFamily: "'DM Sans', sans-serif",
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', gap: '8px',
-                        marginBottom: '10px',
-                    }}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#16a34a">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    Send WhatsApp receipt
-                </button>
-            )}
+                )}
+            </div>
 
-            {/* Action buttons */}
+            {/* Close + New sale */}
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={onClose} style={{
                     flex: 1, padding: '10px', borderRadius: '8px',
@@ -221,7 +281,7 @@ function ReceiptModal({
     )
 }
 
-//   M-Pesa modal
+//  M-Pesa modal
 function MpesaModal({
                         total, onConfirm, onClose, loading,
                     }: {
@@ -231,7 +291,6 @@ function MpesaModal({
     loading:   boolean
 }) {
     const [ref, setRef] = useState('')
-
     return (
         <Modal title="M-Pesa payment" onClose={onClose} maxWidth={400}>
             <div style={{
@@ -244,7 +303,6 @@ function MpesaModal({
                     {formatCurrency(total)}
                 </p>
             </div>
-
             <div style={{ marginBottom: '16px' }}>
                 <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 6px' }}>Till Number</p>
                 <div style={{
@@ -256,7 +314,6 @@ function MpesaModal({
                     247247
                 </div>
             </div>
-
             <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '6px' }}>
                     M-Pesa transaction code (optional)
@@ -274,7 +331,6 @@ function MpesaModal({
                     onChange={e => setRef(e.target.value.toUpperCase())}
                 />
             </div>
-
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={onClose} style={{
                     flex: 1, padding: '11px',
@@ -289,15 +345,11 @@ function MpesaModal({
                     onClick={() => onConfirm(ref)}
                     disabled={loading}
                     style={{
-                        flex: 2, padding: '11px',
-                        border: 'none', borderRadius: '8px',
-                        background: '#16a34a', color: '#fff',
-                        fontSize: '14px', fontWeight: 500,
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: loading ? 0.7 : 1,
+                        flex: 2, padding: '11px', border: 'none', borderRadius: '8px',
+                        background: '#16a34a', color: '#fff', fontSize: '14px', fontWeight: 500,
+                        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
                         fontFamily: "'DM Sans', sans-serif",
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', gap: '8px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                     }}
                 >
                     {loading ? <><Spinner size={16} color="#fff" /> Processing...</> : 'Confirm payment'}
@@ -307,7 +359,7 @@ function MpesaModal({
     )
 }
 
-//   Add customer modal
+// Add customer modal
 function AddCustomerModal({
                               onSelect, onClose,
                           }: {
@@ -343,7 +395,6 @@ function AddCustomerModal({
 
     return (
         <Modal title="Select customer" onClose={onClose} maxWidth={460}>
-            {/* Tabs */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', background: '#f1f5f9', borderRadius: '8px', padding: '4px' }}>
                 {(['search', 'new'] as const).map(t => (
                     <button key={t} onClick={() => setTab(t)} style={{
@@ -389,11 +440,9 @@ function AddCustomerModal({
                                 textAlign: 'left', cursor: 'pointer',
                                 fontFamily: "'DM Sans', sans-serif",
                             }}>
-                                <p style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500, margin: '0 0 2px' }}>
-                                    {c.name}
-                                </p>
+                                <p style={{ color: '#0f172a', fontSize: '14px', fontWeight: 500, margin: '0 0 2px' }}>{c.name}</p>
                                 <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>
-                                    {c.phone || 'No phone'} · Total spent: {formatCurrency(c.totalSpent)}
+                                    {c.phone || 'No phone'} · Spent: {formatCurrency(c.totalSpent)}
                                 </p>
                             </button>
                         ))}
@@ -435,10 +484,8 @@ function AddCustomerModal({
                         onClick={handleCreate}
                         disabled={creating || !newName}
                         style={{
-                            width: '100%', padding: '11px',
-                            border: 'none', borderRadius: '8px',
-                            background: '#2563eb', color: '#fff',
-                            fontSize: '14px', fontWeight: 500,
+                            width: '100%', padding: '11px', border: 'none', borderRadius: '8px',
+                            background: '#2563eb', color: '#fff', fontSize: '14px', fontWeight: 500,
                             cursor: creating || !newName ? 'not-allowed' : 'pointer',
                             opacity: creating || !newName ? 0.6 : 1,
                             fontFamily: "'DM Sans', sans-serif",
@@ -454,48 +501,46 @@ function AddCustomerModal({
 
 // Main cashier page
 export default function NewSalePage() {
-    const { shop } = useAuthStore()
+    const { shop, user }     = useAuthStore()
     const { width, isSmall } = useScreenSize()
     const {
         items, addItem, updateQuantity, clearCart,
         getTotal, setCustomer, customerId,
     } = useCartStore()
 
-    const isOnline        = useOnlineStatus()
+    const isOnline = useOnlineStatus()
     const { cachedProducts, cacheProducts, addToQueue } = useOfflineStore()
 
     const [search,           setSearch]           = useState('')
     const [activeCategory,   setActiveCategory]   = useState('')
-    const [paymentMethod,    setPaymentMethod]    = useState<'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'>('CASH')
-    const [discount,         setDiscount]         = useState('')
-    const [notes,            setNotes]            = useState('')
-    const [showMpesa,        setShowMpesa]        = useState(false)
-    const [showCustomer,     setShowCustomer]     = useState(false)
-    const [completedSale,    setCompletedSale]    = useState<any>(null)
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+    const [paymentMethod,    setPaymentMethod]     = useState<'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'>('CASH')
+    const [discount,         setDiscount]          = useState('')
+    const [notes,            setNotes]             = useState('')
+    const [showMpesa,        setShowMpesa]         = useState(false)
+    const [showCustomer,     setShowCustomer]      = useState(false)
+    const [completedSale,    setCompletedSale]     = useState<any>(null)
+    const [selectedCustomer, setSelectedCustomer]  = useState<Customer | null>(null)
 
-    const [loyaltyPoints,    setLoyaltyPoints]    = useState(0)
-    const [redeemingPoints,  setRedeemingPoints]  = useState(false)
-    const [pointsToRedeem,   setPointsToRedeem]   = useState('')
-    const [pointsDiscount,   setPointsDiscount]   = useState(0)
-    const [loyaltySettings,  setLoyaltySettings]  = useState<any>(null)
+    const [loyaltyPoints,   setLoyaltyPoints]   = useState(0)
+    const [redeemingPoints, setRedeemingPoints] = useState(false)
+    const [pointsToRedeem,  setPointsToRedeem]  = useState('')
+    const [pointsDiscount,  setPointsDiscount]  = useState(0)
+    const [loyaltySettings, setLoyaltySettings] = useState<any>(null)
 
     const [barcodeBuffer, setBarcodeBuffer] = useState('')
-    const [barcodeError, setBarcodeError]   = useState('')
+    const [barcodeError,  setBarcodeError]  = useState('')
     const barcodeTimeout                    = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const [showCamera,   setShowCamera]     = useState(false)
+    const [showCamera,    setShowCamera]    = useState(false)
 
     const searchRef = useRef<HTMLInputElement>(null)
 
-    useEffect(() => {
-        searchRef.current?.focus()
-    }, [])
+    useEffect(() => { searchRef.current?.focus() }, [])
 
     useEffect(() => {
         loyaltyApi.getSettings().then(r => setLoyaltySettings(r.data.data)).catch(() => {})
     }, [])
 
-    //  Queries
+    // Queries
     const { data: catData } = useQuery({
         queryKey: ['categories'],
         queryFn:  () => categoryApi.getAll().then(r => r.data.data || []),
@@ -507,18 +552,15 @@ export default function NewSalePage() {
             const result = await productApi.getAll({
                 search:     search         || undefined,
                 categoryId: activeCategory || undefined,
-                limit: 50,
+                limit:      50,
             }).then(r => r.data.data || [])
-
-            // Cache products for offline use
             if (result.length > 0) cacheProducts(result)
             return result
         },
-        // Use cached data when offline
         placeholderData: isOnline ? undefined : cachedProducts,
     })
 
-    const categories: Category[] = catData    || []
+    const categories: Category[] = catData || []
     const products:   Product[]  = isOnline
         ? (productData || []).filter((p: Product) => p.isActive && p.stockQuantity > 0)
         : cachedProducts.filter(p => p.isActive && p.stockQuantity > 0)
@@ -527,21 +569,14 @@ export default function NewSalePage() {
     const discount_  = parseFloat(discount || '0')
     const finalTotal = Math.max(0, total - discount_ - pointsDiscount)
 
-    // USB barcode scanners type very fast — faster than a human
-    // We detect this by measuring time between keystrokes
-    // If the input is completed in under 100ms it came from a scanner not a human
+    // Barcode handler
     const handleBarcodeInput = useCallback((value: string) => {
         setBarcodeBuffer(value)
-
-        // Clear existing timeout
         if (barcodeTimeout.current) clearTimeout(barcodeTimeout.current)
 
-        // If value looks like a barcode (8+ chars) search immediately
         if (value.length >= 8) {
-            barcodeTimeout.current = setTimeout(async () => {
-                const match = products.find(
-                    p => p.barcode === value || p.sku === value
-                )
+            barcodeTimeout.current = setTimeout(() => {
+                const match = products.find(p => p.barcode === value || p.sku === value)
                 if (match) {
                     addItem(match)
                     setSearch('')
@@ -554,17 +589,13 @@ export default function NewSalePage() {
                 }
             }, 100)
         } else {
-            // Normal search
             setSearch(value)
         }
     }, [products, addItem])
 
-    // Camera Scan Handler
     const handleCameraScan = (barcode: string) => {
         setShowCamera(false)
-        const match = products.find(
-            p => p.barcode === barcode || p.sku === barcode
-        )
+        const match = products.find(p => p.barcode === barcode || p.sku === barcode)
         if (match) {
             addItem(match)
             setBarcodeError('')
@@ -575,28 +606,22 @@ export default function NewSalePage() {
         }
     }
 
+    // Checkout
     const handleCheckout = () => {
         if (items.length === 0) { toast.warning('Add items to the cart first'); return }
-
-        // Offline checkout
         if (!isOnline) {
-            if (paymentMethod === 'MPESA') {
-                toast.warning('M-Pesa is not available offline. Use cash.')
-                return
-            }
+            if (paymentMethod === 'MPESA') { toast.warning('M-Pesa is not available offline. Use cash.'); return }
             handleOfflineCheckout()
             return
         }
-
-        // Online checkout
         if (paymentMethod === 'MPESA') { setShowMpesa(true); return }
         checkoutMutation.mutate(undefined)
     }
 
     const handleOfflineCheckout = () => {
         const offlineSale: OfflineSale = {
-            id:             uuidv4(),
-            items:          items.map(i => ({
+            id:            uuidv4(),
+            items:         items.map(i => ({
                 productId: i.product.id,
                 quantity:  i.quantity,
                 name:      i.product.name,
@@ -610,26 +635,22 @@ export default function NewSalePage() {
             createdAt:      new Date().toISOString(),
             synced:         false,
         }
-
         addToQueue(offlineSale)
-
-        // Show offline receipt
         setCompletedSale({
             receiptNumber:  `OFFLINE-${Date.now()}`,
             subtotal:       String(total),
             discountAmount: String(discount_ + pointsDiscount),
             totalAmount:    String(finalTotal),
             paymentMethod,
-            items:          items.map(i => ({
+            items: items.map(i => ({
                 name:      i.product.name,
                 quantity:  i.quantity,
                 unitPrice: i.product.price,
                 subtotal:  String(i.subtotal),
             })),
-            createdAt:  new Date().toISOString(),
-            isOffline:  true,
+            createdAt: new Date().toISOString(),
+            isOffline: true,
         })
-
         clearCart()
         setDiscount('')
         setNotes('')
@@ -640,30 +661,24 @@ export default function NewSalePage() {
         setPointsToRedeem('')
         setPointsDiscount(0)
         setRedeemingPoints(false)
-
         toast.success('Sale saved offline — will sync when internet returns')
     }
 
-    //  Checkout mutation
     const checkoutMutation = useMutation({
         mutationFn: (ref?: string) =>
             saleApi.create({
                 items:             items.map(i => ({ productId: i.product.id, quantity: i.quantity })),
                 paymentMethod,
-                customerId:        customerId  || undefined,
+                customerId:        customerId || undefined,
                 discountAmount:    (discount_ + pointsDiscount) || undefined,
-                notes:             notes       || undefined,
-                paymentReference:  ref         || undefined,
+                notes:             notes      || undefined,
+                paymentReference:  ref        || undefined,
                 loyaltyPointsUsed: pointsToRedeem ? parseInt(pointsToRedeem) : undefined,
             }),
         onSuccess: (res) => {
-            console.log('Sale response:', JSON.stringify(res.data))
-
-            // Handle all possible response shapes from the API
-            const d = res.data?.data
+            const d          = res.data?.data
             const saleRecord = d?.sale || d || null
             setCompletedSale(saleRecord)
-
             clearCart()
             setDiscount('')
             setNotes('')
@@ -689,14 +704,11 @@ export default function NewSalePage() {
         setShowCustomer(false)
         setPointsToRedeem('')
         setPointsDiscount(0)
-
         if (c) {
             try {
                 const res = await loyaltyApi.getCustomerHistory(c.id)
                 setLoyaltyPoints(res.data.data?.customer?.loyaltyPoints || 0)
-            } catch {
-                setLoyaltyPoints(0)
-            }
+            } catch { setLoyaltyPoints(0) }
         } else {
             setLoyaltyPoints(0)
         }
@@ -710,14 +722,40 @@ export default function NewSalePage() {
     // Render
     return (
         <div style={{
-            display: 'flex',
+            display:       'flex',
             flexDirection: isSmall ? 'column' : 'row',
-            height: isSmall ? 'auto' : 'calc(100vh - 64px)',
-            minHeight: isSmall ? '100vh' : 'auto',
-            margin: '-32px',
-            fontFamily: "'DM Sans', sans-serif",
-            position: 'relative',
+            height:        isSmall ? 'auto' : 'calc(100vh - 64px)',
+            minHeight:     isSmall ? '100vh' : 'auto',
+            margin:        '-32px',
+            fontFamily:    "'DM Sans', sans-serif",
+            position:      'relative',
         }}>
+            <style>{`
+        .product-card {
+          background: #fff; border: 1.5px solid #e2e8f0;
+          border-radius: 10px; padding: 12px; cursor: pointer;
+          transition: all 0.15s; text-align: left; width: 100%;
+        }
+        .product-card:hover { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+        .product-card:active { transform: scale(0.98); }
+        .cat-tab {
+          padding: 7px 14px; border-radius: 20px;
+          border: 1.5px solid #e2e8f0; background: #fff;
+          font-size: 13px; cursor: pointer; white-space: nowrap;
+          font-family: 'DM Sans', sans-serif; color: #64748b; transition: all 0.15s;
+        }
+        .cat-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 500; }
+        .qty-btn {
+          width: 28px; height: 28px; border-radius: 6px;
+          border: 1px solid #e2e8f0; background: #f8fafc;
+          cursor: pointer; font-size: 16px; font-weight: 500;
+          display: flex; align-items: center; justify-content: center;
+          color: #0f172a; transition: all 0.1s; flex-shrink: 0;
+        }
+        .qty-btn:hover { background: #e2e8f0; }
+        .qty-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+      `}</style>
+
             {/* Offline banner */}
             {!isOnline && (
                 <div style={{
@@ -730,57 +768,24 @@ export default function NewSalePage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.56 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
                     </svg>
-                    You are offline — sales will be saved and synced when internet returns. M-Pesa unavailable.
+                    Offline — sales will sync when internet returns. M-Pesa unavailable.
                 </div>
             )}
 
-            <style>{`
-        .product-card {
-          background: #fff; border: 1.5px solid #e2e8f0;
-          border-radius: 10px; padding: 12px; cursor: pointer;
-          transition: all 0.15s; text-align: left; width: 100%;
-        }
-        .product-card:hover {
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
-        }
-        .product-card:active { transform: scale(0.98); }
-        .cat-tab {
-          padding: 7px 14px; border-radius: 20px;
-          border: 1.5px solid #e2e8f0; background: #fff;
-          font-size: 13px; cursor: pointer; white-space: nowrap;
-          font-family: 'DM Sans', sans-serif; color: #64748b;
-          transition: all 0.15s;
-        }
-        .cat-tab.active {
-          background: #2563eb; border-color: #2563eb;
-          color: #fff; font-weight: 500;
-        }
-        .qty-btn {
-          width: 28px; height: 28px; border-radius: 6px;
-          border: 1px solid #e2e8f0; background: #f8fafc;
-          cursor: pointer; font-size: 16px; font-weight: 500;
-          display: flex; align-items: center; justify-content: center;
-          color: #0f172a; transition: all 0.1s; flex-shrink: 0;
-        }
-        .qty-btn:hover { background: #e2e8f0; }
-        .qty-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-      `}</style>
-
             {/* ── LEFT — Product grid ── */}
             <div style={{
-                flex: isSmall ? 'none' : 1,
-                height: isSmall ? 'auto' : '100%',
-                display: 'flex',
+                flex:         isSmall ? 'none' : 1,
+                height:       isSmall ? 'auto' : '100%',
+                display:      'flex',
                 flexDirection: 'column',
-                background: '#f8fafc',
-                borderRight: isSmall ? 'none' : '1px solid #e2e8f0',
+                background:   '#f8fafc',
+                borderRight:  isSmall ? 'none' : '1px solid #e2e8f0',
                 borderBottom: isSmall ? '1px solid #e2e8f0' : 'none',
-                overflow: 'hidden',
-                maxHeight: isSmall ? '60vh' : 'none',
+                overflow:     'hidden',
+                maxHeight:    isSmall ? '60vh' : 'none',
             }}>
 
-                {/* Search / barcode input */}
+                {/* Search */}
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#fff' }}>
                     <div style={{ position: 'relative' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -795,13 +800,11 @@ export default function NewSalePage() {
                             value={barcodeBuffer || search}
                             onChange={e => handleBarcodeInput(e.target.value)}
                             onKeyDown={e => {
-                                // Enter key — treat as barcode scan
-                                const currentVal = barcodeBuffer || search;
-                                if (e.key === 'Enter' && currentVal.trim()) {
+                                const val = (barcodeBuffer || search).trim()
+                                if (e.key === 'Enter' && val) {
                                     const match = products.find(
-                                        p => p.barcode === currentVal.trim() ||
-                                            p.sku     === currentVal.trim() ||
-                                            p.name.toLowerCase() === currentVal.trim().toLowerCase()
+                                        p => p.barcode === val || p.sku === val ||
+                                            p.name.toLowerCase() === val.toLowerCase()
                                     )
                                     if (match) {
                                         addItem(match)
@@ -810,7 +813,7 @@ export default function NewSalePage() {
                                         setBarcodeError('')
                                         toast.success(`${match.name} added to cart`)
                                     } else {
-                                        setBarcodeError(`No product found for "${currentVal.trim()}"`)
+                                        setBarcodeError(`No product found for "${val}"`)
                                         setTimeout(() => setBarcodeError(''), 3000)
                                     }
                                     e.preventDefault()
@@ -821,13 +824,11 @@ export default function NewSalePage() {
                                 border: `1.5px solid ${barcodeError ? '#ef4444' : '#e2e8f0'}`,
                                 borderRadius: '10px', fontSize: '14px', outline: 'none',
                                 boxSizing: 'border-box', fontFamily: "'DM Sans', sans-serif",
-                                color: '#0f172a', background: '#f8fafc', transition: 'border-color 0.2s',
+                                color: '#0f172a', background: '#f8fafc',
                             }}
-                            onFocus={e  => (e.target.style.borderColor = barcodeError ? '#ef4444' : '#2563eb')}
-                            onBlur={e   => (e.target.style.borderColor = barcodeError ? '#ef4444' : '#e2e8f0')}
+                            onFocus={e => (e.target.style.borderColor = barcodeError ? '#ef4444' : '#2563eb')}
+                            onBlur={e  => (e.target.style.borderColor = barcodeError ? '#ef4444' : '#e2e8f0')}
                         />
-
-                        {/* Camera scan button */}
                         <button
                             onClick={() => setShowCamera(true)}
                             title="Scan with camera"
@@ -835,12 +836,8 @@ export default function NewSalePage() {
                                 position: 'absolute', right: '10px', top: '50%',
                                 transform: 'translateY(-50%)',
                                 background: 'none', border: 'none', cursor: 'pointer',
-                                color: '#94a3b8', padding: '4px',
-                                display: 'flex', alignItems: 'center',
-                                transition: 'color 0.15s',
+                                color: '#94a3b8', padding: '4px', display: 'flex', alignItems: 'center',
                             }}
-                            onMouseOver={e => (e.currentTarget.style.color = '#2563eb')}
-                            onMouseOut={e  => (e.currentTarget.style.color = '#94a3b8')}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
@@ -912,7 +909,7 @@ export default function NewSalePage() {
                                             background: inCart ? '#eff6ff' : '#f8fafc',
                                             borderRadius: '8px',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            marginBottom: '8px', transition: 'background 0.15s',
+                                            marginBottom: '8px',
                                         }}>
                                             {inCart ? (
                                                 <span style={{ color: '#2563eb', fontSize: '22px', fontWeight: 600 }}>
@@ -927,16 +924,12 @@ export default function NewSalePage() {
                                         <p style={{ color: '#0f172a', fontSize: '13px', fontWeight: 500, margin: '0 0 4px', lineHeight: 1.3 }}>
                                             {p.name}
                                         </p>
-                                        <p style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600, margin: '0 0 6px' }}>
+                                        <p style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600, margin: '0 0 4px' }}>
                                             {formatCurrency(p.price)}
                                         </p>
-                                        {isLow ? (
+                                        {isLow && (
                                             <span style={{ background: '#fff7ed', color: '#ea580c', fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '10px' }}>
                         {p.stockQuantity} left
-                      </span>
-                                        ) : (
-                                            <span style={{ color: '#94a3b8', fontSize: '11px' }}>
-                        {p.stockQuantity} in stock
                       </span>
                                         )}
                                     </button>
@@ -947,15 +940,14 @@ export default function NewSalePage() {
                 </div>
             </div>
 
-            {/* ── RIGHT — Cart ── */}
+            {/* RIGHT — Cart */}
             <div style={{
-                width: isSmall ? '100%' : '380px',
-                minWidth: isSmall ? 'auto' : '380px',
-                display: 'flex',
+                width:         isSmall ? '100%' : '380px',
+                minWidth:      isSmall ? 'auto' : '380px',
+                display:       'flex',
                 flexDirection: 'column',
-                background: '#fff',
-                overflow: 'hidden',
-                maxHeight: isSmall ? '40vh' : 'none',
+                background:    '#fff',
+                overflow:      'hidden',
             }}>
 
                 {/* Cart header */}
@@ -966,7 +958,11 @@ export default function NewSalePage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <h3 style={{ color: '#0f172a', fontSize: '15px', fontWeight: 500, margin: 0 }}>Cart</h3>
                         {items.length > 0 && (
-                            <span style={{ background: '#2563eb', color: '#fff', fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '10px' }}>
+                            <span style={{
+                                background: '#2563eb', color: '#fff',
+                                fontSize: '11px', fontWeight: 600,
+                                padding: '2px 7px', borderRadius: '10px',
+                            }}>
                 {items.reduce((s, i) => s + i.quantity, 0)}
               </span>
                         )}
@@ -1075,7 +1071,7 @@ export default function NewSalePage() {
                     )}
                 </div>
 
-                {/* Cart footer — only shows when items exist */}
+                {/* Cart footer */}
                 {items.length > 0 && (
                     <div style={{ borderTop: '1px solid #f1f5f9', padding: '16px 20px' }}>
 
@@ -1102,6 +1098,23 @@ export default function NewSalePage() {
                             </div>
                         </div>
 
+                        {/* Notes */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <label style={{ color: '#64748b', fontSize: '13px', minWidth: '70px' }}>Notes</label>
+                            <input
+                                type="text"
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                                placeholder="Optional note"
+                                style={{
+                                    flex: 1, padding: '7px 10px',
+                                    border: '1px solid #e2e8f0', borderRadius: '8px',
+                                    fontSize: '13px', outline: 'none',
+                                    fontFamily: "'DM Sans', sans-serif", color: '#0f172a',
+                                }}
+                            />
+                        </div>
+
                         {/* Loyalty points */}
                         {selectedCustomer && loyaltySettings?.isEnabled && loyaltyPoints > 0 && (
                             <div style={{ marginBottom: '10px' }}>
@@ -1109,12 +1122,12 @@ export default function NewSalePage() {
                                     background: '#fdf4ff', border: '1px solid #e9d5ff',
                                     borderRadius: '8px', padding: '10px 12px',
                                 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: redeemingPoints ? '8px' : 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <span style={{ fontSize: '14px' }}>⭐</span>
                                             <span style={{ color: '#7c3aed', fontSize: '13px', fontWeight: 500 }}>
-                                    {loyaltyPoints} points available
-                                  </span>
+                        {loyaltyPoints} points available
+                      </span>
                                         </div>
                                         {!redeemingPoints ? (
                                             <button
@@ -1131,11 +1144,7 @@ export default function NewSalePage() {
                                             </button>
                                         ) : (
                                             <button
-                                                onClick={() => {
-                                                    setRedeemingPoints(false)
-                                                    setPointsToRedeem('')
-                                                    setPointsDiscount(0)
-                                                }}
+                                                onClick={() => { setRedeemingPoints(false); setPointsToRedeem(''); setPointsDiscount(0) }}
                                                 style={{
                                                     background: 'none', border: 'none',
                                                     color: '#94a3b8', fontSize: '12px',
@@ -1146,7 +1155,6 @@ export default function NewSalePage() {
                                             </button>
                                         )}
                                     </div>
-
                                     {redeemingPoints && (
                                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                             <input
@@ -1157,8 +1165,7 @@ export default function NewSalePage() {
                                                 onChange={e => {
                                                     const pts = parseInt(e.target.value || '0')
                                                     setPointsToRedeem(e.target.value)
-                                                    const discount = pts * (loyaltySettings?.pointsRedemptionRate || 1)
-                                                    setPointsDiscount(discount)
+                                                    setPointsDiscount(pts * (loyaltySettings?.pointsRedemptionRate || 1))
                                                 }}
                                                 placeholder={`Min ${loyaltySettings?.minimumRedemption || 100} pts`}
                                                 style={{
@@ -1169,30 +1176,13 @@ export default function NewSalePage() {
                                                 }}
                                             />
                                             <span style={{ color: '#7c3aed', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                                    = KES {pointsDiscount}
-                                  </span>
+                        = KES {pointsDiscount}
+                      </span>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
-
-                        {/* Notes */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                            <label style={{ color: '#64748b', fontSize: '13px', minWidth: '70px' }}>Notes</label>
-                            <input
-                                type="text"
-                                value={notes}
-                                onChange={e => setNotes(e.target.value)}
-                                placeholder="Optional note"
-                                style={{
-                                    flex: 1, padding: '7px 10px',
-                                    border: '1px solid #e2e8f0', borderRadius: '8px',
-                                    fontSize: '13px', outline: 'none',
-                                    fontFamily: "'DM Sans', sans-serif", color: '#0f172a',
-                                }}
-                            />
-                        </div>
 
                         {/* Totals */}
                         <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>
@@ -1208,7 +1198,7 @@ export default function NewSalePage() {
                             )}
                             {pointsDiscount > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                    <span style={{ color: '#64748b', fontSize: '13px' }}>Points redeemed</span>
+                                    <span style={{ color: '#64748b', fontSize: '13px' }}>Points discount</span>
                                     <span style={{ color: '#7c3aed', fontSize: '13px' }}>-{formatCurrency(pointsDiscount)}</span>
                                 </div>
                             )}
@@ -1220,17 +1210,25 @@ export default function NewSalePage() {
 
                         {/* Payment methods */}
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                            <PaymentBtn label="Cash" selected={paymentMethod === 'CASH'} onClick={() => setPaymentMethod('CASH')} color="#16a34a"
-                                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>}
+                            <PaymentBtn
+                                label="Cash" selected={paymentMethod === 'CASH'}
+                                onClick={() => setPaymentMethod('CASH')} color="#16a34a"
+                                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>}
                             />
-                            <PaymentBtn label="M-Pesa" selected={paymentMethod === 'MPESA'} onClick={() => setPaymentMethod('MPESA')} color="#16a34a"
-                                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>}
+                            <PaymentBtn
+                                label="M-Pesa" selected={paymentMethod === 'MPESA'}
+                                onClick={() => setPaymentMethod('MPESA')} color="#16a34a"
+                                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>}
                             />
-                            <PaymentBtn label="Card" selected={paymentMethod === 'CARD'} onClick={() => setPaymentMethod('CARD')} color="#2563eb"
-                                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>}
+                            <PaymentBtn
+                                label="Card" selected={paymentMethod === 'CARD'}
+                                onClick={() => setPaymentMethod('CARD')} color="#2563eb"
+                                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>}
                             />
-                            <PaymentBtn label="Bank" selected={paymentMethod === 'BANK_TRANSFER'} onClick={() => setPaymentMethod('BANK_TRANSFER')} color="#7c3aed"
-                                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12,2 20,7 4,7"/></svg>}
+                            <PaymentBtn
+                                label="Bank" selected={paymentMethod === 'BANK_TRANSFER'}
+                                onClick={() => setPaymentMethod('BANK_TRANSFER')} color="#7c3aed"
+                                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12,2 20,7 4,7"/></svg>}
                             />
                         </div>
 
@@ -1241,9 +1239,11 @@ export default function NewSalePage() {
                             style={{
                                 width: '100%', padding: '14px',
                                 border: 'none', borderRadius: '10px',
-                                background: '#2563eb', color: '#fff',
+                                background: items.length === 0 ? '#e2e8f0' : '#2563eb',
+                                color: items.length === 0 ? '#94a3b8' : '#fff',
                                 fontSize: '15px', fontWeight: 600,
-                                cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                                cursor: items.length === 0 ? 'not-allowed' : 'pointer',
+                                fontFamily: "'DM Sans', sans-serif",
                                 display: 'flex', alignItems: 'center',
                                 justifyContent: 'center', gap: '8px',
                                 transition: 'all 0.15s',
@@ -1266,6 +1266,16 @@ export default function NewSalePage() {
             </div>
 
             {/* ── Modals ── */}
+            {completedSale && (
+                <ReceiptModal
+                    sale={completedSale}
+                    onClose={() => setCompletedSale(null)}
+                    onNewSale={handleNewSale}
+                    shopName={shop?.name || 'Our Shop'}
+                    shopPhone={(shop as any)?.phone}
+                    cashierName={user?.name}
+                />
+            )}
             {showMpesa && (
                 <MpesaModal
                     total={finalTotal}
@@ -1274,24 +1284,12 @@ export default function NewSalePage() {
                     loading={checkoutMutation.isPending}
                 />
             )}
-
             {showCustomer && (
                 <AddCustomerModal
                     onSelect={handleSelectCustomer}
                     onClose={() => setShowCustomer(false)}
                 />
             )}
-
-            {completedSale && (
-                <ReceiptModal
-                    sale={completedSale}
-                    onClose={() => setCompletedSale(null)}
-                    onNewSale={handleNewSale}
-                    shopName={shop?.name || 'Our Shop'}
-                />
-            )}
-
-            {/* Camera barcode scanner */}
             {showCamera && (
                 <BarcodeScanner
                     onScan={handleCameraScan}

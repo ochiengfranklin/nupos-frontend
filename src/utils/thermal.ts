@@ -1,8 +1,9 @@
-interface ThermalReceiptData {
+export interface ThermalReceiptData {
     receiptNumber:  string
     shopName:       string
     shopPhone?:     string
     shopAddress?:   string
+    receiptFooter?: string
     items: {
         name:      string
         quantity:  number
@@ -196,6 +197,12 @@ export const generateReceiptHTML = (data: ThermalReceiptData, paperWidth: '58mm'
   ${data.notes ? `
   <hr class="divider" />
   <p>Note: ${data.notes}</p>` : ''}
+
+  ${data.receiptFooter ? `
+  <hr class="divider" />
+  <div class="center">
+    <p>${data.receiptFooter}</p>
+  </div>` : ''}
 
   <hr class="solid-divider" />
 

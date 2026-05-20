@@ -1,16 +1,32 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type {User, Shop} from '../types'
+import type { User } from '../types'
+
+interface Shop {
+    id:             string
+    name:           string
+    slug:           string
+    phone?:         string
+    email?:         string
+    address?:       string
+    city?:          string
+    country?:       string
+    currency?:      string
+    tillNumber?:    string
+    taxRate?:       string
+    receiptFooter?: string
+    logoUrl?:       string
+}
 
 interface AuthStore {
     accessToken:  string | null
     refreshToken: string | null
-    user:         User | null
-    shop:         Shop | null
+    user:         User   | null
+    shop:         Shop   | null
 
-    // Actions
     setAuth:    (data: { accessToken: string; refreshToken: string; user: User; shop: Shop }) => void
     setTokens:  (accessToken: string, refreshToken: string) => void
+    setShop:    (shop: Shop) => void
     logout:     () => void
     isLoggedIn: () => boolean
     hasRole:    (roles: string[]) => boolean
@@ -36,6 +52,8 @@ export const useAuthStore = create<AuthStore>()(
                 refreshToken,
             }),
 
+            setShop: (shop) => set({ shop }),
+
             logout: () => set({
                 accessToken:  null,
                 refreshToken: null,
@@ -45,16 +63,15 @@ export const useAuthStore = create<AuthStore>()(
 
             isLoggedIn: () => !!get().accessToken && !!get().user,
 
-            // Check if current user has one of the allowed roles
             hasRole: (roles: string[]) => {
                 const role = get().user?.role
                 if (!role) return false
-                if (role === 'OWNER') return true  // owner has access to everything
+                if (role === 'OWNER') return true
                 return roles.includes(role)
             },
         }),
         {
-            name: 'pos-auth', // key in localStorage
+            name: 'pos-auth',
         }
     )
 )

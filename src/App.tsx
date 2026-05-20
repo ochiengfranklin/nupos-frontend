@@ -17,6 +17,7 @@ import InventoryPage from "./pages/inventory/InventoryPage.tsx";
 import SuppliersPage from "./pages/suppliers/SuppliersPage.tsx";
 import OfflineQueuePage from "./pages/offline/OfflineQueuePage.tsx";
 import LoyaltySettingsPage from "./pages/loyalty/LoyaltySettingsPage.tsx";
+import SettingsPage from "./pages/settings/SettingsPage.tsx";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn())
@@ -78,6 +79,7 @@ export default function App() {
                     <Route path="suppliers" element={<SuppliersPage />} />
                     <Route path="offline-queue" element={<OfflineQueuePage />} />
                     <Route path="loyalty" element={<LoyaltySettingsPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
                 </Route>
 
                 <Route path="/contact" element={<ContactPage />} />

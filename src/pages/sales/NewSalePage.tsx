@@ -59,6 +59,7 @@ function ReceiptModal({
     shopPhone?:   string
     cashierName?: string
 }) {
+    const { shop }                  = useAuthStore()
     const [phone,     setPhone]     = useState('')
     const [showPhone, setShowPhone] = useState(false)
     const [sending,   setSending]   = useState(false)
@@ -69,6 +70,8 @@ function ReceiptModal({
             receiptNumber:  sale.receiptNumber  || '—',
             shopName,
             shopPhone,
+            shopAddress:    shop?.address,
+            receiptFooter:  shop?.receiptFooter,
             items: (sale.items || []).map((item: any) => ({
                 name:      item.name || item.product?.name || 'Product',
                 quantity:  item.quantity,
@@ -281,14 +284,15 @@ function ReceiptModal({
     )
 }
 
-//  M-Pesa modal
+// M-Pesa modal
 function MpesaModal({
-                        total, onConfirm, onClose, loading,
+                        total, onConfirm, onClose, loading, tillNumber,
                     }: {
-    total:     number
-    onConfirm: (ref: string) => void
-    onClose:   () => void
-    loading:   boolean
+    total:       number
+    onConfirm:   (ref: string) => void
+    onClose:     () => void
+    loading:     boolean
+    tillNumber?: string
 }) {
     const [ref, setRef] = useState('')
     return (
@@ -303,17 +307,19 @@ function MpesaModal({
                     {formatCurrency(total)}
                 </p>
             </div>
-            <div style={{ marginBottom: '16px' }}>
-                <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 6px' }}>Till Number</p>
-                <div style={{
-                    background: '#f8fafc', border: '1px solid #e2e8f0',
-                    borderRadius: '8px', padding: '10px 14px',
-                    fontSize: '18px', fontWeight: 600, color: '#0f172a',
-                    letterSpacing: '0.05em', fontFamily: 'DM Mono, monospace',
-                }}>
-                    247247
+            {tillNumber && (
+                <div style={{ marginBottom: '16px' }}>
+                    <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 6px' }}>Till Number</p>
+                    <div style={{
+                        background: '#f8fafc', border: '1px solid #e2e8f0',
+                        borderRadius: '8px', padding: '10px 14px',
+                        fontSize: '18px', fontWeight: 600, color: '#0f172a',
+                        letterSpacing: '0.05em', fontFamily: 'DM Mono, monospace',
+                    }}>
+                        {tillNumber}
+                    </div>
                 </div>
-            </div>
+            )}
             <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '6px' }}>
                     M-Pesa transaction code (optional)
@@ -511,8 +517,8 @@ export default function NewSalePage() {
     const isOnline = useOnlineStatus()
     const { cachedProducts, cacheProducts, addToQueue } = useOfflineStore()
 
-    const [search,           setSearch]           = useState('')
-    const [activeCategory,   setActiveCategory]   = useState('')
+    const [search,           setSearch]            = useState('')
+    const [activeCategory,   setActiveCategory]    = useState('')
     const [paymentMethod,    setPaymentMethod]     = useState<'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'>('CASH')
     const [discount,         setDiscount]          = useState('')
     const [notes,            setNotes]             = useState('')
@@ -968,6 +974,7 @@ export default function NewSalePage() {
                         )}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {/* Customer button */}
                         <button
                             onClick={() => setShowCustomer(true)}
                             style={{
@@ -1272,7 +1279,7 @@ export default function NewSalePage() {
                     onClose={() => setCompletedSale(null)}
                     onNewSale={handleNewSale}
                     shopName={shop?.name || 'Our Shop'}
-                    shopPhone={(shop as any)?.phone}
+                    shopPhone={shop?.phone}
                     cashierName={user?.name}
                 />
             )}
@@ -1282,6 +1289,7 @@ export default function NewSalePage() {
                     onConfirm={ref => checkoutMutation.mutate(ref)}
                     onClose={() => setShowMpesa(false)}
                     loading={checkoutMutation.isPending}
+                    tillNumber={shop?.tillNumber}
                 />
             )}
             {showCustomer && (

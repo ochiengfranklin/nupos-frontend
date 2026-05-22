@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { productApi, categoryApi } from '../../api/product.api'
 import { customerApi } from '../../api/customer.api'
 import { saleApi } from '../../api/sale.api'
+import { mpesaApi } from '../../api/mpesa.api'
 import { useCartStore } from '../../store/cart.store'
 import { useAuthStore } from '../../store/auth.store'
 import { useSettingsStore } from '../../store/settings.store'
@@ -42,8 +43,8 @@ function PaymentBtn({
         >
             <span style={{ color: selected ? color : '#94a3b8' }}>{icon}</span>
             <span style={{ fontSize: '12px', fontWeight: 500, color: selected ? color : '#64748b' }}>
-        {label}
-      </span>
+                {label}
+            </span>
         </button>
     )
 }
@@ -146,12 +147,12 @@ function ReceiptModal({
                         padding: '4px 0', fontSize: '13px',
                         borderBottom: '1px solid #f1f5f9',
                     }}>
-            <span style={{ color: '#0f172a' }}>
-              {item.name || item.product?.name || 'Product'} × {item.quantity}
-            </span>
+                        <span style={{ color: '#0f172a' }}>
+                            {item.name || item.product?.name || 'Product'} × {item.quantity}
+                        </span>
                         <span style={{ color: '#64748b' }}>
-              {formatCurrency(parseFloat(String(item.subtotal || 0)))}
-            </span>
+                            {formatCurrency(parseFloat(String(item.subtotal || 0)))}
+                        </span>
                     </div>
                 ))}
             </div>
@@ -161,22 +162,22 @@ function ReceiptModal({
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Subtotal</span>
                     <span style={{ color: '#0f172a', fontSize: '13px' }}>
-            KES {parseFloat(sale?.subtotal || '0').toFixed(2)}
-          </span>
+                        KES {parseFloat(sale?.subtotal || '0').toFixed(2)}
+                    </span>
                 </div>
                 {parseFloat(sale?.discountAmount || '0') > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span style={{ color: '#64748b', fontSize: '13px' }}>Discount</span>
                         <span style={{ color: '#dc2626', fontSize: '13px' }}>
-              -KES {parseFloat(sale?.discountAmount || '0').toFixed(2)}
-            </span>
+                            -KES {parseFloat(sale?.discountAmount || '0').toFixed(2)}
+                        </span>
                     </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                     <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>Total</span>
                     <span style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600 }}>
-            KES {parseFloat(sale?.totalAmount || '0').toFixed(2)}
-          </span>
+                        KES {parseFloat(sale?.totalAmount || '0').toFixed(2)}
+                    </span>
                 </div>
             </div>
 
@@ -284,83 +285,235 @@ function ReceiptModal({
     )
 }
 
-// M-Pesa modal
-function MpesaModal({
-                        total, onConfirm, onClose, loading, tillNumber,
-                    }: {
-    total:       number
-    onConfirm:   (ref: string) => void
-    onClose:     () => void
-    loading:     boolean
-    tillNumber?: string
+// STK Push Modal — replaces the old manual MpesaModal
+function StkPushModal({
+                          total,
+                          receiptRef,
+                          onSuccess,
+                          onClose,
+                      }: {
+    total:      number
+    receiptRef: string
+    onSuccess:  (checkoutRequestId: string) => void
+    onClose:    () => void
 }) {
-    const [ref, setRef] = useState('')
+    const [phase,      setPhase]      = useState<'phone' | 'waiting' | 'failed'>('phone')
+    const [phone,      setPhone]      = useState('')
+    const [error,      setError]      = useState('')
+    const [resultDesc, setResultDesc] = useState('')
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+    const stopPolling = () => {
+        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+    }
+
+    useEffect(() => () => stopPolling(), [])
+
+    const startPolling = (cid: string) => {
+        pollRef.current = setInterval(async () => {
+            try {
+                const res = await mpesaApi.getStatus(cid)
+                const { status, resultDesc: desc } = res.data?.data || {}
+
+                if (status === 'COMPLETED') {
+                    stopPolling()
+                    onSuccess(cid)
+                } else if (status === 'FAILED' || status === 'CANCELLED' || status === 'TIMEOUT') {
+                    stopPolling()
+                    setResultDesc(desc || 'Payment was not completed.')
+                    setPhase('failed')
+                }
+            } catch { /* keep polling silently */ }
+        }, 3000)
+    }
+
+    const handleSend = async () => {
+        setError('')
+        const cleaned = phone.replace(/\D/g, '')
+        if (cleaned.length < 9) { setError('Enter a valid Safaricom number'); return }
+
+        try {
+            setPhase('waiting')
+            const res = await mpesaApi.initiateStkPush({
+                phone,
+                amount:      total,
+                reference:   receiptRef,
+                description: 'POS Payment',
+            })
+            const cid = res.data?.data?.checkoutRequestId
+            startPolling(cid)
+        } catch (e: any) {
+            setError(e?.response?.data?.message || 'Failed to send STK Push')
+            setPhase('phone')
+        }
+    }
+
+    const handleRetry = () => {
+        setPhase('phone')
+        setError('')
+        setResultDesc('')
+    }
+
     return (
         <Modal title="M-Pesa payment" onClose={onClose} maxWidth={400}>
+            {/* Amount bar */}
             <div style={{
-                background: '#eff6ff', border: '1px solid #bfdbfe',
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
                 borderRadius: '10px', padding: '16px',
                 marginBottom: '20px', textAlign: 'center',
             }}>
-                <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 4px' }}>Amount to collect</p>
-                <p style={{ color: '#1d4ed8', fontSize: '28px', fontWeight: 600, margin: 0 }}>
+                <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 4px' }}>Amount</p>
+                <p style={{ color: '#16a34a', fontSize: '28px', fontWeight: 700, margin: 0 }}>
                     {formatCurrency(total)}
                 </p>
             </div>
-            {tillNumber && (
-                <div style={{ marginBottom: '16px' }}>
-                    <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 6px' }}>Till Number</p>
-                    <div style={{
-                        background: '#f8fafc', border: '1px solid #e2e8f0',
-                        borderRadius: '8px', padding: '10px 14px',
-                        fontSize: '18px', fontWeight: 600, color: '#0f172a',
-                        letterSpacing: '0.05em', fontFamily: 'DM Mono, monospace',
+
+            {/* ── Phase: phone entry ── */}
+            {phase === 'phone' && (
+                <>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{
+                            display: 'block', color: '#64748b', fontSize: '13px',
+                            fontWeight: 500, marginBottom: '8px',
+                        }}>
+                            Customer's Safaricom number
+                        </label>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={e => setPhone(e.target.value)}
+                            placeholder="07XXXXXXXX or 2547XXXXXXXX"
+                            autoFocus
+                            onKeyDown={e => e.key === 'Enter' && handleSend()}
+                            style={{
+                                width: '100%', padding: '10px 14px',
+                                border: `1.5px solid ${error ? '#ef4444' : '#e2e8f0'}`,
+                                borderRadius: '8px', fontSize: '15px',
+                                outline: 'none', boxSizing: 'border-box',
+                                fontFamily: 'DM Mono, monospace',
+                                color: '#0f172a', letterSpacing: '0.04em',
+                            }}
+                        />
+                        {error && (
+                            <p style={{ color: '#ef4444', fontSize: '12px', margin: '6px 0 0' }}>{error}</p>
+                        )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={onClose} style={{
+                            flex: 1, padding: '11px',
+                            border: '1px solid #e2e8f0', borderRadius: '8px',
+                            background: '#fff', color: '#64748b',
+                            fontSize: '14px', cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSend}
+                            disabled={!phone.trim()}
+                            style={{
+                                flex: 2, padding: '11px', border: 'none',
+                                borderRadius: '8px', background: '#16a34a',
+                                color: '#fff', fontSize: '14px', fontWeight: 600,
+                                cursor: !phone.trim() ? 'not-allowed' : 'pointer',
+                                opacity: !phone.trim() ? 0.6 : 1,
+                                fontFamily: "'DM Sans', sans-serif",
+                                display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: '8px',
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.7A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+                            </svg>
+                            Send STK Push
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {/* ── Phase: waiting ── */}
+            {phase === 'waiting' && (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
+                        <svg width="72" height="72" viewBox="0 0 72 72" style={{ animation: 'spin 1.2s linear infinite' }}>
+                            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+                            <circle cx="36" cy="36" r="30" fill="none" stroke="#e2e8f0" strokeWidth="5"/>
+                            <circle cx="36" cy="36" r="30" fill="none" stroke="#16a34a" strokeWidth="5"
+                                    strokeDasharray="60 130" strokeLinecap="round"/>
+                        </svg>
+                        <div style={{
+                            position: 'absolute', top: '50%', left: '50%',
+                            transform: 'translate(-50%,-50%)',
+                        }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#16a34a">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 style={{ color: '#0f172a', fontSize: '16px', fontWeight: 600, margin: '0 0 8px' }}>
+                        Waiting for payment...
+                    </h3>
+                    <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 6px' }}>
+                        STK Push sent to
+                    </p>
+                    <p style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600, margin: '0 0 8px', fontFamily: 'DM Mono, monospace' }}>
+                        {phone}
+                    </p>
+                    <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 24px' }}>
+                        Ask the customer to enter their M-Pesa PIN on their phone
+                    </p>
+                    <button onClick={() => { stopPolling(); onClose() }} style={{
+                        padding: '9px 24px', border: '1px solid #e2e8f0',
+                        borderRadius: '8px', background: '#fff',
+                        color: '#64748b', fontSize: '13px', cursor: 'pointer',
+                        fontFamily: "'DM Sans', sans-serif",
                     }}>
-                        {tillNumber}
+                        Cancel
+                    </button>
+                </div>
+            )}
+
+            {/* ── Phase: failed ── */}
+            {phase === 'failed' && (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{
+                        width: '56px', height: '56px', background: '#fef2f2',
+                        borderRadius: '50%', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', margin: '0 auto 16px',
+                    }}>
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                    </div>
+                    <h3 style={{ color: '#0f172a', fontSize: '16px', fontWeight: 600, margin: '0 0 8px' }}>
+                        Payment failed
+                    </h3>
+                    <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 24px' }}>
+                        {resultDesc}
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={onClose} style={{
+                            flex: 1, padding: '10px',
+                            border: '1px solid #e2e8f0', borderRadius: '8px',
+                            background: '#fff', color: '#64748b',
+                            fontSize: '13px', cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                            Cancel
+                        </button>
+                        <button onClick={handleRetry} style={{
+                            flex: 1, padding: '10px', border: 'none',
+                            borderRadius: '8px', background: '#16a34a',
+                            color: '#fff', fontSize: '13px', fontWeight: 600,
+                            cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                            Try again
+                        </button>
                     </div>
                 </div>
             )}
-            <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '6px' }}>
-                    M-Pesa transaction code (optional)
-                </label>
-                <input
-                    style={{
-                        width: '100%', padding: '9px 12px',
-                        border: '1px solid #e2e8f0', borderRadius: '8px',
-                        fontSize: '14px', color: '#0f172a', outline: 'none',
-                        boxSizing: 'border-box', fontFamily: 'DM Mono, monospace',
-                        letterSpacing: '0.05em', textTransform: 'uppercase',
-                    }}
-                    placeholder="e.g. QHX4BK2MNP"
-                    value={ref}
-                    onChange={e => setRef(e.target.value.toUpperCase())}
-                />
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={onClose} style={{
-                    flex: 1, padding: '11px',
-                    border: '1px solid #e2e8f0', borderRadius: '8px',
-                    background: '#fff', color: '#64748b',
-                    fontSize: '14px', cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
-                }}>
-                    Cancel
-                </button>
-                <button
-                    onClick={() => onConfirm(ref)}
-                    disabled={loading}
-                    style={{
-                        flex: 2, padding: '11px', border: 'none', borderRadius: '8px',
-                        background: '#16a34a', color: '#fff', fontSize: '14px', fontWeight: 500,
-                        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
-                        fontFamily: "'DM Sans', sans-serif",
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    }}
-                >
-                    {loading ? <><Spinner size={16} color="#fff" /> Processing...</> : 'Confirm payment'}
-                </button>
-            </div>
         </Modal>
     )
 }
@@ -517,8 +670,8 @@ export default function NewSalePage() {
     const isOnline = useOnlineStatus()
     const { cachedProducts, cacheProducts, addToQueue } = useOfflineStore()
 
-    const [search,           setSearch]            = useState('')
-    const [activeCategory,   setActiveCategory]    = useState('')
+    const [search,           setSearch]           = useState('')
+    const [activeCategory,   setActiveCategory]   = useState('')
     const [paymentMethod,    setPaymentMethod]     = useState<'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER'>('CASH')
     const [discount,         setDiscount]          = useState('')
     const [notes,            setNotes]             = useState('')
@@ -612,6 +765,19 @@ export default function NewSalePage() {
         }
     }
 
+    const resetCart = () => {
+        clearCart()
+        setDiscount('')
+        setNotes('')
+        setSelectedCustomer(null)
+        setCustomer(null)
+        setPaymentMethod('CASH')
+        setLoyaltyPoints(0)
+        setPointsToRedeem('')
+        setPointsDiscount(0)
+        setRedeemingPoints(false)
+    }
+
     // Checkout
     const handleCheckout = () => {
         if (items.length === 0) { toast.warning('Add items to the cart first'); return }
@@ -657,16 +823,7 @@ export default function NewSalePage() {
             createdAt: new Date().toISOString(),
             isOffline: true,
         })
-        clearCart()
-        setDiscount('')
-        setNotes('')
-        setSelectedCustomer(null)
-        setCustomer(null)
-        setPaymentMethod('CASH')
-        setLoyaltyPoints(0)
-        setPointsToRedeem('')
-        setPointsDiscount(0)
-        setRedeemingPoints(false)
+        resetCart()
         toast.success('Sale saved offline — will sync when internet returns')
     }
 
@@ -685,17 +842,8 @@ export default function NewSalePage() {
             const d          = res.data?.data
             const saleRecord = d?.sale || d || null
             setCompletedSale(saleRecord)
-            clearCart()
-            setDiscount('')
-            setNotes('')
-            setSelectedCustomer(null)
-            setCustomer(null)
-            setPaymentMethod('CASH')
+            resetCart()
             setShowMpesa(false)
-            setLoyaltyPoints(0)
-            setPointsToRedeem('')
-            setPointsDiscount(0)
-            setRedeemingPoints(false)
             toast.success('Sale completed!')
         },
         onError: (e: any) => {
@@ -703,6 +851,12 @@ export default function NewSalePage() {
             setShowMpesa(false)
         },
     })
+
+    // STK Push confirmed — complete the sale using checkoutRequestId as payment reference
+    const handleStkSuccess = (checkoutRequestId: string) => {
+        setShowMpesa(false)
+        checkoutMutation.mutate(checkoutRequestId)
+    }
 
     const handleSelectCustomer = async (c: Customer | null) => {
         setSelectedCustomer(c)
@@ -780,15 +934,15 @@ export default function NewSalePage() {
 
             {/* ── LEFT — Product grid ── */}
             <div style={{
-                flex:         isSmall ? 'none' : 1,
-                height:       isSmall ? 'auto' : '100%',
-                display:      'flex',
+                flex:          isSmall ? 'none' : 1,
+                height:        isSmall ? 'auto' : '100%',
+                display:       'flex',
                 flexDirection: 'column',
-                background:   '#f8fafc',
-                borderRight:  isSmall ? 'none' : '1px solid #e2e8f0',
-                borderBottom: isSmall ? '1px solid #e2e8f0' : 'none',
-                overflow:     'hidden',
-                maxHeight:    isSmall ? '60vh' : 'none',
+                background:    '#f8fafc',
+                borderRight:   isSmall ? 'none' : '1px solid #e2e8f0',
+                borderBottom:  isSmall ? '1px solid #e2e8f0' : 'none',
+                overflow:      'hidden',
+                maxHeight:     isSmall ? '60vh' : 'none',
             }}>
 
                 {/* Search */}
@@ -919,8 +1073,8 @@ export default function NewSalePage() {
                                         }}>
                                             {inCart ? (
                                                 <span style={{ color: '#2563eb', fontSize: '22px', fontWeight: 600 }}>
-                          ×{inCart.quantity}
-                        </span>
+                                                    ×{inCart.quantity}
+                                                </span>
                                             ) : (
                                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
@@ -935,8 +1089,8 @@ export default function NewSalePage() {
                                         </p>
                                         {isLow && (
                                             <span style={{ background: '#fff7ed', color: '#ea580c', fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '10px' }}>
-                        {p.stockQuantity} left
-                      </span>
+                                                {p.stockQuantity} left
+                                            </span>
                                         )}
                                     </button>
                                 )
@@ -969,12 +1123,11 @@ export default function NewSalePage() {
                                 fontSize: '11px', fontWeight: 600,
                                 padding: '2px 7px', borderRadius: '10px',
                             }}>
-                {items.reduce((s, i) => s + i.quantity, 0)}
-              </span>
+                                {items.reduce((s, i) => s + i.quantity, 0)}
+                            </span>
                         )}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {/* Customer button */}
                         <button
                             onClick={() => setShowCustomer(true)}
                             style={{
@@ -1059,8 +1212,8 @@ export default function NewSalePage() {
                                             ) : '−'}
                                         </button>
                                         <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: 600, minWidth: '20px', textAlign: 'center' }}>
-                      {item.quantity}
-                    </span>
+                                            {item.quantity}
+                                        </span>
                                         <button
                                             className="qty-btn"
                                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
@@ -1070,8 +1223,8 @@ export default function NewSalePage() {
                                         </button>
                                     </div>
                                     <span style={{ color: '#64748b', fontSize: '12px', minWidth: '60px', textAlign: 'right' }}>
-                    {formatCurrency(item.product.price)} ea
-                  </span>
+                                        {formatCurrency(item.product.price)} ea
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -1086,9 +1239,9 @@ export default function NewSalePage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                             <label style={{ color: '#64748b', fontSize: '13px', minWidth: '70px' }}>Discount</label>
                             <div style={{ position: 'relative', flex: 1 }}>
-                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '12px' }}>
-                  KES
-                </span>
+                                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '12px' }}>
+                                    KES
+                                </span>
                                 <input
                                     type="number" min="0"
                                     value={discount}
@@ -1133,8 +1286,8 @@ export default function NewSalePage() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <span style={{ fontSize: '14px' }}>⭐</span>
                                             <span style={{ color: '#7c3aed', fontSize: '13px', fontWeight: 500 }}>
-                        {loyaltyPoints} points available
-                      </span>
+                                                {loyaltyPoints} points available
+                                            </span>
                                         </div>
                                         {!redeemingPoints ? (
                                             <button
@@ -1183,8 +1336,8 @@ export default function NewSalePage() {
                                                 }}
                                             />
                                             <span style={{ color: '#7c3aed', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                        = KES {pointsDiscount}
-                      </span>
+                                                = KES {pointsDiscount}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -1284,12 +1437,11 @@ export default function NewSalePage() {
                 />
             )}
             {showMpesa && (
-                <MpesaModal
+                <StkPushModal
                     total={finalTotal}
-                    onConfirm={ref => checkoutMutation.mutate(ref)}
+                    receiptRef={`SALE-${Date.now()}`}
+                    onSuccess={handleStkSuccess}
                     onClose={() => setShowMpesa(false)}
-                    loading={checkoutMutation.isPending}
-                    tillNumber={shop?.tillNumber}
                 />
             )}
             {showCustomer && (

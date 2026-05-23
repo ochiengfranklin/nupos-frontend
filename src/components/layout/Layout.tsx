@@ -5,6 +5,7 @@ import { ToastContainer } from '../ui/Toast'
 import { useAuthStore } from '../../store/auth.store'
 import { useNavigate } from 'react-router-dom'
 import { useScreenSize } from '../../utils/responsive'
+import SubscriptionBanner from './SubscriptionBanner'
 
 export default function Layout() {
     const { shop, logout }   = useAuthStore()
@@ -64,6 +65,9 @@ export default function Layout() {
                     </button>
                 </div>
             )}
+
+            {/* Subscription banner — only show for non-demo shops */}
+            {!isDemo && <SubscriptionBanner />}
 
             {/* Mobile top bar */}
             {isSmall && (

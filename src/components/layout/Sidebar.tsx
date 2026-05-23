@@ -134,6 +134,17 @@ const navItems = [
         ),
     },
     {
+        path:  '/app/billing',
+        label: 'Billing',
+        roles: ['OWNER'],
+        icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+        ),
+    },
+    {
         path:  '/app/settings',
         label: 'Settings',
         roles: ['OWNER', 'MANAGER'],
@@ -147,7 +158,7 @@ const navItems = [
 ]
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
-    const navigate          = useNavigate()
+    const navigate               = useNavigate()
     const { user, shop, logout } = useAuthStore()
     useOnlineStatus()
 
@@ -203,10 +214,10 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
             {/* Logo + close button */}
             <div style={{
-                padding:      '20px 20px 16px',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                display:      'flex',
-                alignItems:   'center',
+                padding:        '20px 20px 16px',
+                borderBottom:   '1px solid rgba(255,255,255,0.05)',
+                display:        'flex',
+                alignItems:     'center',
                 justifyContent: 'space-between',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -286,9 +297,9 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
                     }}>
-            <span style={{ color: '#60a5fa', fontSize: '12px', fontWeight: 500 }}>
-              {initials}
-            </span>
+                        <span style={{ color: '#60a5fa', fontSize: '12px', fontWeight: 500 }}>
+                            {initials}
+                        </span>
                     </div>
                     <div style={{ minWidth: 0 }}>
                         <p style={{ color: '#cbd5e1', fontSize: '13px', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

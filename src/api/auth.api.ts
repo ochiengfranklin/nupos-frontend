@@ -36,6 +36,12 @@ export const authApi = {
     getMe: () =>
         api.get<ApiResponse<User>>('/auth/me'),
 
+    forgotPassword: (data: { shopSlug: string; email: string }) =>
+        api.post('/auth/forgot-password', data),
+
+    resetPassword: (data: { token: string; newPassword: string }) =>
+        api.post('/auth/reset-password', data),
+
     logout: () =>
         api.post('/auth/logout'),
 }

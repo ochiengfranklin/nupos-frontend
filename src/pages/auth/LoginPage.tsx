@@ -15,8 +15,8 @@ export default function LoginPage() {
         email:    '',
         password: '',
     })
-    const [error,       setError]       = useState('')
-    const [loading,     setLoading]     = useState(false)
+    const [error,        setError]        = useState('')
+    const [loading,      setLoading]      = useState(false)
     const [showPassword, setShowPassword] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,22 +37,12 @@ export default function LoginPage() {
 
     return (
         <>
-            {/* Sticky navbar — outside the scrollable area */}
             <nav style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 100,
-                background: '#fff',
-                borderBottom: '1px solid #e1e3e5',
-                padding: '0 32px',
-                height: '56px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+                background: '#fff', borderBottom: '1px solid #e1e3e5',
+                padding: '0 32px', height: '56px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-                {/* Logo */}
                 <div
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
                     onClick={() => navigate('/')}
@@ -69,7 +59,6 @@ export default function LoginPage() {
                     </div>
                     <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.02em' }}>NuPOS</span>
                 </div>
-
                 <p style={{ color: '#6d7175', fontSize: '13px', margin: 0 }}>
                     Don't have an account?{' '}
                     <button
@@ -81,55 +70,32 @@ export default function LoginPage() {
                 </p>
             </nav>
 
-            {/* Scrollable content — padded top to account for fixed navbar */}
             <div style={{
-                minHeight: '100vh',
-                background: '#f6f6f7',
-                display: 'flex',
-                flexDirection: 'column',
-                fontFamily: "'DM Sans', sans-serif",
-                paddingTop: '56px',
+                minHeight: '100vh', background: '#f6f6f7',
+                display: 'flex', flexDirection: 'column',
+                fontFamily: "'DM Sans', sans-serif", paddingTop: '56px',
             }}>
                 <style>{`
           @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
           * { box-sizing: border-box; }
-
           .login-input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e1e3e5;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #1a1a1a;
-            background: #fff;
-            outline: none;
-            transition: border-color 0.15s, box-shadow 0.15s;
-            font-family: 'DM Sans', sans-serif;
-            box-sizing: border-box;
+            width: 100%; padding: 10px 14px;
+            border: 1.5px solid #e1e3e5; border-radius: 6px;
+            font-size: 14px; color: #1a1a1a; background: #fff;
+            outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+            font-family: 'DM Sans', sans-serif; box-sizing: border-box;
           }
-          .login-input:focus {
-            border-color: #008060;
-            box-shadow: 0 0 0 3px rgba(0,128,96,0.1);
-          }
+          .login-input:focus { border-color: #008060; box-shadow: 0 0 0 3px rgba(0,128,96,0.1); }
           .login-input::placeholder { color: #b0b8bf; }
-
           .login-btn {
-            width: 100%;
-            padding: 12px;
-            background: #008060;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-            transition: background 0.15s;
+            width: 100%; padding: 12px; background: #008060;
+            color: #fff; border: none; border-radius: 6px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; transition: background 0.15s;
             letter-spacing: -0.01em;
           }
           .login-btn:hover:not(:disabled) { background: #005c43; }
           .login-btn:disabled { opacity: 0.65; cursor: not-allowed; }
-
           .eye-btn {
             position: absolute; right: 12px; top: 50%;
             transform: translateY(-50%);
@@ -138,32 +104,19 @@ export default function LoginPage() {
             transition: color 0.15s;
           }
           .eye-btn:hover { color: #1a1a1a; }
-
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
+          @keyframes spin { to { transform: rotate(360deg); } }
         `}</style>
 
-                {/* Main content */}
                 <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: isSmall ? '24px 16px' : '40px 24px',
                 }}>
                     <div style={{ width: '100%', maxWidth: '440px' }}>
-
-                        {/* Card */}
                         <div style={{
-                            background: '#fff',
-                            border: '1px solid #e1e3e5',
-                            borderRadius: '12px',
-                            padding: '36px 32px',
+                            background: '#fff', border: '1px solid #e1e3e5',
+                            borderRadius: '12px', padding: '36px 32px',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                         }}>
-
-                            {/* Header */}
                             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
                                 <div style={{
                                     width: '44px', height: '44px', background: '#008060',
@@ -184,17 +137,11 @@ export default function LoginPage() {
                                 </p>
                             </div>
 
-                            {/* Error */}
                             {error && (
                                 <div style={{
-                                    background: '#fff4f4',
-                                    border: '1px solid #ffd2d2',
-                                    borderRadius: '6px',
-                                    padding: '10px 14px',
-                                    marginBottom: '20px',
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '8px',
+                                    background: '#fff4f4', border: '1px solid #ffd2d2',
+                                    borderRadius: '6px', padding: '10px 14px', marginBottom: '20px',
+                                    display: 'flex', alignItems: 'flex-start', gap: '8px',
                                 }}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
                                         <circle cx="12" cy="12" r="10"/>
@@ -205,10 +152,7 @@ export default function LoginPage() {
                                 </div>
                             )}
 
-                            {/* Form */}
                             <form onSubmit={handleSubmit}>
-
-                                {/* Shop ID */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
                                         Shop ID
@@ -227,7 +171,6 @@ export default function LoginPage() {
                                     </p>
                                 </div>
 
-                                {/* Email */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
                                         Email
@@ -242,7 +185,6 @@ export default function LoginPage() {
                                     />
                                 </div>
 
-                                {/* Password */}
                                 <div style={{ marginBottom: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                                         <label style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>
@@ -250,7 +192,7 @@ export default function LoginPage() {
                                         </label>
                                         <button
                                             type="button"
-                                            onClick={() => {}}
+                                            onClick={() => navigate('/forgot-password')}
                                             style={{ background: 'none', border: 'none', color: '#008060', fontSize: '12px', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: 0 }}
                                         >
                                             Forgot password?
@@ -266,11 +208,7 @@ export default function LoginPage() {
                                             style={{ paddingRight: '44px' }}
                                             required
                                         />
-                                        <button
-                                            type="button"
-                                            className="eye-btn"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                        >
+                                        <button type="button" className="eye-btn" onClick={() => setShowPassword(!showPassword)}>
                                             {showPassword ? (
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
@@ -287,29 +225,27 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
-                                {/* Submit */}
                                 <button type="submit" disabled={loading} className="login-btn">
                                     {loading ? (
                                         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                           style={{ animation: 'spin 0.8s linear infinite' }}>
-                        <line x1="12" y1="2" x2="12" y2="6"/>
-                        <line x1="12" y1="18" x2="12" y2="22"/>
-                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
-                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
-                        <line x1="2" y1="12" x2="6" y2="12"/>
-                        <line x1="18" y1="12" x2="22" y2="12"/>
-                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
-                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
-                      </svg>
-                      Logging in...
-                    </span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                                 style={{ animation: 'spin 0.8s linear infinite' }}>
+                                                <line x1="12" y1="2"  x2="12" y2="6"/>
+                                                <line x1="12" y1="18" x2="12" y2="22"/>
+                                                <line x1="4.93" y1="4.93"   x2="7.76"  y2="7.76"/>
+                                                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                                                <line x1="2"  y1="12" x2="6"  y2="12"/>
+                                                <line x1="18" y1="12" x2="22" y2="12"/>
+                                                <line x1="4.93"  y1="19.07" x2="7.76"  y2="16.24"/>
+                                                <line x1="16.24" y1="7.76"  x2="19.07" y2="4.93"/>
+                                            </svg>
+                                            Logging in...
+                                        </span>
                                     ) : 'Log in'}
                                 </button>
                             </form>
                         </div>
 
-                        {/* Footer note */}
                         <p style={{ textAlign: 'center', color: '#6d7175', fontSize: '12px', marginTop: '20px', lineHeight: 1.6 }}>
                             By logging in you agree to NuPOS{' '}
                             <button style={{ background: 'none', border: 'none', color: '#6d7175', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', fontFamily: "'DM Sans', sans-serif", padding: 0 }}>
@@ -321,7 +257,6 @@ export default function LoginPage() {
                             </button>
                         </p>
 
-                        {/* Back to home */}
                         <div style={{ textAlign: 'center', marginTop: '16px' }}>
                             <button
                                 onClick={() => navigate('/')}
@@ -342,14 +277,9 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div style={{
-                    borderTop: '1px solid #e1e3e5',
-                    padding: '16px 32px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '24px',
-                    background: '#fff',
+                    borderTop: '1px solid #e1e3e5', padding: '16px 32px',
+                    display: 'flex', justifyContent: 'center', gap: '24px', background: '#fff',
                 }}>
                     {['Privacy policy', 'Terms of service', 'Contact support'].map(l => (
                         <button
@@ -357,8 +287,7 @@ export default function LoginPage() {
                             style={{
                                 background: 'none', border: 'none', cursor: 'pointer',
                                 color: '#6d7175', fontSize: '12px',
-                                fontFamily: "'DM Sans', sans-serif",
-                                transition: 'color 0.15s',
+                                fontFamily: "'DM Sans', sans-serif", transition: 'color 0.15s',
                             }}
                             onMouseOver={e => (e.currentTarget.style.color = '#1a1a1a')}
                             onMouseOut={e  => (e.currentTarget.style.color = '#6d7175')}
